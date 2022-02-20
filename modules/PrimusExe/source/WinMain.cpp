@@ -9,6 +9,7 @@
 
 #include "Core/Core.hpp"
 #include "Core/Math.hpp"
+#include "Core/TaskScheduler.hpp"
 
 #include "Primus/D3D11Renderer.hpp"
 
@@ -38,11 +39,13 @@ namespace
   HANDLE process = nullptr;
   WINDOWPLACEMENT windowPosition = { sizeof(windowPosition) };
   const TCHAR* gameName = L"Primus";
-  int processorCount = 0;
+  int coreCount = 0;
   FrameStates frameStates;
   FrameState* lastFrameState = nullptr;
   FrameState* nextFrameState = nullptr;
   int frameCount = 0;
+
+  TaskScheduler taskScheduler;
 
   LRESULT CALLBACK WindowProc(
     HWND   windowHandle,
@@ -209,7 +212,7 @@ static void debugShowResourcesUsage()
     percent = double((sys.QuadPart - lastSysCPU.QuadPart) +
       (user.QuadPart - lastUserCPU.QuadPart));
     percent /= double(now.QuadPart - lastCPU.QuadPart);
-    percent /= double(processorCount);
+    percent /= double(coreCount);
     percent *= 100;
     lastCPU = now;
     lastUserCPU = user;
@@ -260,9 +263,9 @@ int WINAPI WinMain(
 {
   process = GetCurrentProcess();
 
-  SYSTEM_INFO sysInfo;
-  GetSystemInfo(&sysInfo);
-  processorCount = sysInfo.dwNumberOfProcessors;
+  SYSTEM_INFO systemInfo;
+  GetSystemInfo(&systemInfo);
+  coreCount = systemInfo.dwNumberOfProcessors;
 
   WNDCLASS windowClass{};
   windowClass.lpfnWndProc = &WindowProc;
@@ -298,6 +301,19 @@ int WINAPI WinMain(
     showErrorMessageBox("Failed to create game window", "Fatal error");
     return -1;
   }
+
+  if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST))
+  {
+    logWarning("Failed to set highest thread priority for the main thread.");
+  }
+
+  if (SetThreadAffinityMask(GetCurrentThread(), DWORD_PTR(1)) == 0)
+  {
+    logWarning("Failed to set thread affinity for the main thread.");
+  }
+
+  const int workerThreadCount = max(coreCount - 1, 1);
+  taskScheduler.initialize(workerThreadCount, 1);
 
   D3D11Renderer renderer(window);
 

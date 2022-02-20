@@ -1,6 +1,5 @@
 #define DAR_MODULE_NAME "WinMain"
 
-#include <exception>
 #include <stdio.h>
 
 #define WIN32_LEAN_AND_MEAN
@@ -9,7 +8,9 @@
 #include <Psapi.h>
 
 #include "Core/Core.hpp"
-#include "Math/Math.hpp"
+#include "Core/Math.hpp"
+
+#include "Primus/D3D11Renderer.hpp"
 
 #define VK_Q 0x51
 #define VK_W 0x57
@@ -20,15 +21,15 @@
 
 namespace
 {
-  class GameStates
+  class FrameStates
   {
   public:
-    GameState* getLastState(unsigned int frameIndex) { return states + (--frameIndex % size); };  // overflow when frameIndex == 0 shouldn't be a problem
-    GameState* getNextState(unsigned int frameIndex) { return states + (frameIndex % size); };
+    FrameState* getLastState(unsigned int frameIndex) { return states + (--frameIndex % size); };  // overflow when frameIndex == 0 shouldn't be a problem
+    FrameState* getNextState(unsigned int frameIndex) { return states + (frameIndex % size); };
 
   private:
     static constexpr int size = 2;
-    GameState states[size] = {};
+    FrameState states[size] = {};
   };
 
   int clientAreaWidth = GetSystemMetrics(SM_CXSCREEN);
@@ -36,13 +37,12 @@ namespace
   HWND window = nullptr;
   HANDLE process = nullptr;
   WINDOWPLACEMENT windowPosition = { sizeof(windowPosition) };
-  const char* gameName = "Demo";
+  const TCHAR* gameName = L"Primus";
   int processorCount = 0;
-  GameStates gameStates;
-  GameState* lastGameState = nullptr;
-  UserInput* nextUserInput = nullptr;
+  FrameStates frameStates;
+  FrameState* lastFrameState = nullptr;
+  FrameState* nextFrameState = nullptr;
   int frameCount = 0;
-  D3D11Renderer* rendererPtr = nullptr;
 
   LRESULT CALLBACK WindowProc(
     HWND   windowHandle,
@@ -56,44 +56,38 @@ namespace
     case WM_SIZE: {
       int newClientAreaWidth = LOWORD(lParam);
       int newClientAreaHeight = HIWORD(lParam);
-      if (newClientAreaWidth != clientAreaWidth || newClientAreaHeight != clientAreaHeight) {
-        clientAreaWidth = newClientAreaWidth;
-        clientAreaHeight = newClientAreaHeight;
-        if (rendererPtr) {
-          rendererPtr->onWindowResize(clientAreaWidth, clientAreaHeight);
-        }
-      }
+
     }
                 break;
     case WM_DESTROY:
       PostQuitMessage(0);
       break;
     case WM_LBUTTONDOWN:
-      nextUserInput->mouse.left.pressedDown = true;
-      nextUserInput->mouse.left.isDown = true;
+      nextFrameState->input.mouse.left.pressedDown = true;
+      nextFrameState->input.mouse.left.isDown = true;
       break;
     case WM_LBUTTONUP:
-      nextUserInput->mouse.left.pressedUp = true;
-      nextUserInput->mouse.left.isDown = false;
+      nextFrameState->input.mouse.left.pressedUp = true;
+      nextFrameState->input.mouse.left.isDown = false;
       break;
     case WM_MBUTTONDOWN:
-      nextUserInput->mouse.middle.pressedDown = true;
-      nextUserInput->mouse.middle.isDown = true;
+      nextFrameState->input.mouse.middle.pressedDown = true;
+      nextFrameState->input.mouse.middle.isDown = true;
       break;
     case WM_MBUTTONUP:
-      nextUserInput->mouse.middle.pressedUp = true;
-      nextUserInput->mouse.middle.isDown = false;
+      nextFrameState->input.mouse.middle.pressedUp = true;
+      nextFrameState->input.mouse.middle.isDown = false;
       break;
     case WM_RBUTTONDOWN:
-      nextUserInput->mouse.right.pressedDown = true;
-      nextUserInput->mouse.right.isDown = true;
+      nextFrameState->input.mouse.right.pressedDown = true;
+      nextFrameState->input.mouse.right.isDown = true;
       break;
     case WM_RBUTTONUP:
-      nextUserInput->mouse.right.pressedUp = true;
-      nextUserInput->mouse.right.isDown = false;
+      nextFrameState->input.mouse.right.pressedUp = true;
+      nextFrameState->input.mouse.right.isDown = false;
       break;
     case WM_MOUSEWHEEL:
-      nextUserInput->mouse.dWheel += (float)GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+      nextFrameState->input.mouse.dWheel += (float)GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
       break;
     case WM_KEYDOWN:
       switch (wParam) {
@@ -101,92 +95,92 @@ namespace
         PostQuitMessage(0);
         break;
       case VK_F1:
-        nextUserInput->keyboard.F1.pressedDown = true;
+        nextFrameState->input.keyboard.F1.pressedDown = true;
         break;
       case VK_MENU:
-        nextUserInput->keyboard.rightAlt.pressedDown = true;
+        nextFrameState->input.keyboard.rightAlt.pressedDown = true;
         break;
       case VK_RETURN:
-        nextUserInput->keyboard.enter.pressedDown = true;
+        nextFrameState->input.keyboard.enter.pressedDown = true;
         break;
       case VK_LEFT:
-        nextUserInput->keyboard.left.pressedDown = true;
+        nextFrameState->input.keyboard.left.pressedDown = true;
         break;
       case VK_UP:
-        nextUserInput->keyboard.up.pressedDown = true;
+        nextFrameState->input.keyboard.up.pressedDown = true;
         break;
       case VK_RIGHT:
-        nextUserInput->keyboard.right.pressedDown = true;
+        nextFrameState->input.keyboard.right.pressedDown = true;
         break;
       case VK_DOWN:
-        nextUserInput->keyboard.down.pressedDown = true;
+        nextFrameState->input.keyboard.down.pressedDown = true;
         break;
       case VK_SPACE:
-        nextUserInput->keyboard.space.pressedDown = true;
+        nextFrameState->input.keyboard.space.pressedDown = true;
         break;
       case VK_Q:
-        nextUserInput->keyboard.q.pressedDown = true;
+        nextFrameState->input.keyboard.q.pressedDown = true;
         break;
       case VK_W:
-        nextUserInput->keyboard.w.pressedDown = true;
+        nextFrameState->input.keyboard.w.pressedDown = true;
         break;
       case VK_E:
-        nextUserInput->keyboard.e.pressedDown = true;
+        nextFrameState->input.keyboard.e.pressedDown = true;
         break;
       case VK_A:
-        nextUserInput->keyboard.a.pressedDown = true;
+        nextFrameState->input.keyboard.a.pressedDown = true;
         break;
       case VK_S:
-        nextUserInput->keyboard.s.pressedDown = true;
+        nextFrameState->input.keyboard.s.pressedDown = true;
         break;
       case VK_D:
-        nextUserInput->keyboard.d.pressedDown = true;
+        nextFrameState->input.keyboard.d.pressedDown = true;
         break;
       }
       break;
     case WM_KEYUP:
       switch (wParam) {
       case VK_F1:
-        nextUserInput->keyboard.F1.pressedUp = true;
+        nextFrameState->input.keyboard.F1.pressedUp = true;
         break;
       case VK_MENU:
-        nextUserInput->keyboard.rightAlt.pressedUp = true;
+        nextFrameState->input.keyboard.rightAlt.pressedUp = true;
         break;
       case VK_RETURN:
-        nextUserInput->keyboard.enter.pressedUp = true;
+        nextFrameState->input.keyboard.enter.pressedUp = true;
         break;
       case VK_LEFT:
-        nextUserInput->keyboard.left.pressedUp = true;
+        nextFrameState->input.keyboard.left.pressedUp = true;
         break;
       case VK_UP:
-        nextUserInput->keyboard.up.pressedUp = true;
+        nextFrameState->input.keyboard.up.pressedUp = true;
         break;
       case VK_RIGHT:
-        nextUserInput->keyboard.right.pressedUp = true;
+        nextFrameState->input.keyboard.right.pressedUp = true;
         break;
       case VK_DOWN:
-        nextUserInput->keyboard.down.pressedUp = true;
+        nextFrameState->input.keyboard.down.pressedUp = true;
         break;
       case VK_SPACE:
-        nextUserInput->keyboard.space.pressedUp = true;
+        nextFrameState->input.keyboard.space.pressedUp = true;
         break;
       case VK_Q:
-        nextUserInput->keyboard.q.pressedUp = true;
+        nextFrameState->input.keyboard.q.pressedUp = true;
         break;
       case VK_W:
-        nextUserInput->keyboard.w.pressedUp = true;
+        nextFrameState->input.keyboard.w.pressedUp = true;
         break;
       case VK_E:
-        nextUserInput->keyboard.e.pressedUp = true;
+        nextFrameState->input.keyboard.e.pressedUp = true;
         break;
       case VK_A:
-        nextUserInput->keyboard.a.pressedUp = true;
+        nextFrameState->input.keyboard.a.pressedUp = true;
         break;
       case VK_S:
-        nextUserInput->keyboard.s.pressedUp = true;
+        nextFrameState->input.keyboard.s.pressedUp = true;
         break;
       case VK_D:
-        nextUserInput->keyboard.d.pressedUp = true;
+        nextFrameState->input.keyboard.d.pressedUp = true;
         break;
       }
     default:
@@ -263,7 +257,6 @@ int WINAPI WinMain(
   LPSTR commandLine,
   int showCode
 )
-try
 {
   process = GetCurrentProcess();
 
@@ -275,8 +268,8 @@ try
   windowClass.lpfnWndProc = &WindowProc;
   windowClass.hInstance = instanceHandle;
   windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-  windowClass.lpszClassName = "Game window class";
-  if (!RegisterClassA(&windowClass)) {
+  windowClass.lpszClassName = L"Game window class";
+  if (!RegisterClass(&windowClass)) {
     showErrorMessageBox("Failed to register window class.", "Fatal error");
     return -1;
   }
@@ -287,7 +280,7 @@ try
   AdjustWindowRectEx(&windowRectangle, windowStyle, false, windowStyleEx);
   const int windowWidth = windowRectangle.right - windowRectangle.left;
   const int windowHeight = windowRectangle.bottom - windowRectangle.top;
-  window = CreateWindowExA(
+  window = CreateWindowEx(
     windowStyleEx,
     windowClass.lpszClassName,
     gameName,
@@ -306,21 +299,18 @@ try
     return -1;
   }
 
-  VulkanRenderer renderer(window);
-  rendererPtr = &renderer;
+  D3D11Renderer renderer(window);
 
-  Audio audio;
+  //Audio audio;
 
-  Game game;
+  //Game game;
 
   ShowWindow(window, SW_SHOWNORMAL);
 
   Vec2i cursorPosition = getCursorPosition();
-  lastGameState = gameStates.getLastState(frameCount);
-  lastGameState->input.cursorPosition = cursorPosition;
-  lastGameState->events.emplace(Event::GameStarted, Event());
-  lastGameState->phase = GameState::Phase::Playing;
-  nextGameState = gameStates.getNextState(frameCount);
+  lastFrameState = frameStates.getLastState(frameCount);
+  lastFrameState->input.cursorPosition = cursorPosition;
+  nextFrameState = frameStates.getNextState(frameCount);
 
   LARGE_INTEGER counterFrequency;
   QueryPerformanceFrequency(&counterFrequency);
@@ -336,42 +326,37 @@ try
     else {
       // process frame
 
-      nextUserInput->cursorPosition = getCursorPosition();
-      nextGameState->clientAreaWidth = clientAreaWidth;
-      nextGameState->clientAreaHeight = clientAreaHeight;
+      nextFrameState->input.cursorPosition = getCursorPosition();
+      nextFrameState->clientAreaWidth = clientAreaWidth;
+      nextFrameState->clientAreaHeight = clientAreaHeight;
 
       LARGE_INTEGER currentCounterValue;
       QueryPerformanceCounter(&currentCounterValue);
-      nextGameState->dTime = (float)(currentCounterValue.QuadPart - lastCounterValue.QuadPart) / counterFrequency.QuadPart;
+      nextFrameState->deltaTime = (float)(currentCounterValue.QuadPart - lastCounterValue.QuadPart) / counterFrequency.QuadPart;
       lastCounterValue = currentCounterValue;
 
       debugResetText();
-      debugText(L"%.3f s / %d fps", nextGameState->dTime, (int)(1.f / nextGameState->dTime));
+      debugText(L"%.3f s / %d fps", nextFrameState->deltaTime, (int)(1.f / nextFrameState->deltaTime));
       debugShowResourcesUsage();
 
-      game.update(*lastGameState, nextGameState);
+      //game.update(*lastFrameState, nextFrameState);
 
-      renderer.render(*nextGameState);
+      if (lastFrameState->clientAreaWidth != clientAreaWidth || lastFrameState->clientAreaHeight != clientAreaHeight) {
+          renderer.onWindowResize(clientAreaWidth, clientAreaHeight);
+      }
 
-      audio.update(*nextGameState);
+      renderer.render(*nextFrameState);
+
+      //audio.update(*nextFrameState);
 
       ++frameCount;
 
-      lastGameState = gameStates.getLastState(frameCount);
-      nextGameState = gameStates.getNextState(frameCount);
-      nextGameState->input = lastGameState->input;
-      nextUserInput->keyboard = {};
-      nextUserInput->mouse.dWheel = 0.f;
-      nextGameState->events.clear();
+      lastFrameState = frameStates.getLastState(frameCount);
+      nextFrameState = frameStates.getNextState(frameCount);
+      nextFrameState->input = lastFrameState->input;
+      nextFrameState->input.keyboard = {};
+      nextFrameState->input.mouse.dWheel = 0.f;
     }
   }
   return 0;
-}
-catch (const std::exception& e) {
-  showErrorMessageBox(e.what(), "Fatal error");
-  return -2;
-}
-catch (...) {
-  showErrorMessageBox("Unknown error", "Fatal error");
-  return -3;
 }

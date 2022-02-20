@@ -6,7 +6,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrimusExe", "modules\Primus
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Core", "..\DarEngine\modules\Core\Core.vcxproj", "{11435BCA-AFC5-4C10-8260-A55637CAA4B6}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Math", "..\DarEngine\modules\Math\Math.vcxproj", "{CF5083A0-24A7-47BD-B746-6C81C6D9AE0F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Primus", "modules\Primus\Primus.vcxproj", "{4D5B45A6-922E-465D-916C-D61F5C75C7BB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,10 +22,10 @@ Global
 		{11435BCA-AFC5-4C10-8260-A55637CAA4B6}.Debug|x64.Build.0 = Debug|x64
 		{11435BCA-AFC5-4C10-8260-A55637CAA4B6}.Release|x64.ActiveCfg = Release|x64
 		{11435BCA-AFC5-4C10-8260-A55637CAA4B6}.Release|x64.Build.0 = Release|x64
-		{CF5083A0-24A7-47BD-B746-6C81C6D9AE0F}.Debug|x64.ActiveCfg = Debug|x64
-		{CF5083A0-24A7-47BD-B746-6C81C6D9AE0F}.Debug|x64.Build.0 = Debug|x64
-		{CF5083A0-24A7-47BD-B746-6C81C6D9AE0F}.Release|x64.ActiveCfg = Release|x64
-		{CF5083A0-24A7-47BD-B746-6C81C6D9AE0F}.Release|x64.Build.0 = Release|x64
+		{4D5B45A6-922E-465D-916C-D61F5C75C7BB}.Debug|x64.ActiveCfg = Debug|x64
+		{4D5B45A6-922E-465D-916C-D61F5C75C7BB}.Debug|x64.Build.0 = Debug|x64
+		{4D5B45A6-922E-465D-916C-D61F5C75C7BB}.Release|x64.ActiveCfg = Release|x64
+		{4D5B45A6-922E-465D-916C-D61F5C75C7BB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

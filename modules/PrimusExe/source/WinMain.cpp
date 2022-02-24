@@ -9,7 +9,7 @@
 
 #include "Core/Core.hpp"
 #include "Core/Math.hpp"
-#include "Core/TaskScheduler.hpp"
+#include "Core/Task.hpp"
 
 #include "Primus/D3D11Renderer.hpp"
 

@@ -8,6 +8,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Core", "..\DarEngine\module
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Primus", "modules\Primus\Primus.vcxproj", "{4D5B45A6-922E-465D-916C-D61F5C75C7BB}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "D3D11", "..\DarEngine\modules\D3D11\D3D11.vcxproj", "{CF093D3B-6E7B-4224-969E-112B92E8BB12}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -26,6 +28,10 @@ Global
 		{4D5B45A6-922E-465D-916C-D61F5C75C7BB}.Debug|x64.Build.0 = Debug|x64
 		{4D5B45A6-922E-465D-916C-D61F5C75C7BB}.Release|x64.ActiveCfg = Release|x64
 		{4D5B45A6-922E-465D-916C-D61F5C75C7BB}.Release|x64.Build.0 = Release|x64
+		{CF093D3B-6E7B-4224-969E-112B92E8BB12}.Debug|x64.ActiveCfg = Debug|x64
+		{CF093D3B-6E7B-4224-969E-112B92E8BB12}.Debug|x64.Build.0 = Debug|x64
+		{CF093D3B-6E7B-4224-969E-112B92E8BB12}.Release|x64.ActiveCfg = Release|x64
+		{CF093D3B-6E7B-4224-969E-112B92E8BB12}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

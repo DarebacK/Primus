@@ -2,12 +2,18 @@
 
 #include "Primus/D3D11Renderer.hpp"
 
+#include "Core/Task.hpp"
+
+#include "D3D11/ShaderRegistry.hpp"
+
 #include <vector>
 
 #include <d3d11_4.h>
 #include <dwrite_2.h>
 #include <d2d1_2.h>
 #include <atlbase.h>
+
+using namespace D3D11;
 
 namespace
 {
@@ -45,6 +51,8 @@ namespace
   constexpr float nearPlane = 1.f;
   constexpr float farPlane = 100.f;
   Mat4f projectionMatrix = Mat4f::identity();
+
+  ShaderRegistry shaderRegistry;
 
 #ifdef DAR_DEBUG
   CComPtr<ID3D11Debug> debug = nullptr;
@@ -225,7 +233,7 @@ namespace
 
 } // anonymous namespace
 
-D3D11Renderer::D3D11Renderer(HWND window)
+D3D11Renderer::D3D11Renderer(HWND window, TaskScheduler& taskScheduler)
 {
   // DEVICE
   UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
@@ -351,6 +359,8 @@ D3D11Renderer::D3D11Renderer(HWND window)
   debugTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
   debugTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 #endif
+
+  shaderRegistry.reload(L"shaders\\build", taskScheduler);
 }
 
 void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)

@@ -315,7 +315,7 @@ int WINAPI WinMain(
   const int workerThreadCount = max(coreCount - 1, 1);
   taskScheduler.initialize(workerThreadCount, 1);
 
-  D3D11Renderer renderer(window);
+  D3D11Renderer renderer(window, taskScheduler);
 
   //Audio audio;
 

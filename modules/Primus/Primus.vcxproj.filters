@@ -12,6 +12,9 @@
     <Filter Include="Source Files\include">
       <UniqueIdentifier>{354ca390-4685-4e9e-83ee-ce870e1d31ba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\shaders">
+      <UniqueIdentifier>{55aafd79-516a-43e9-b8f5-748cecba7391}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\Primus\FrameState.hpp">

@@ -11,13 +11,16 @@
 #include <d3d11_4.h>
 #include <dwrite_2.h>
 #include <d2d1_2.h>
-#include <atlbase.h>
 
 using namespace D3D11;
 
+namespace D3D11
+{
+  CComPtr<ID3D11Device> device;
+}
+
 namespace
 {
-  CComPtr<ID3D11Device> device = nullptr;
   CComPtr<ID3D11DeviceContext> context = nullptr;
   D3D_FEATURE_LEVEL featureLevel = (D3D_FEATURE_LEVEL)0;
   CComPtr<IDXGIAdapter3> dxgiAdapter;
@@ -52,7 +55,44 @@ namespace
   constexpr float farPlane = 100.f;
   Mat4f projectionMatrix = Mat4f::identity();
 
-  ShaderRegistry shaderRegistry;
+  // TODO: simplify this using a macro in a separate inline file.
+  D3D11_INPUT_ELEMENT_DESC fullScreenElementDescription[] = {
+    {"SV_VertexID", 0, DXGI_FORMAT_R32_UINT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0} // FullScreen
+  };
+  const wchar_t* vertexShaderNames[] = {
+    L"FullScreen"
+  };
+  struct InputElementDescriptionsEntry
+  {
+    const D3D11_INPUT_ELEMENT_DESC* descriptions;
+    int64 count;
+  };
+  InputElementDescriptionsEntry inputElementDescriptions[] = {
+      {fullScreenElementDescription, arrayLength(fullScreenElementDescription)}
+  };
+  static_assert(arrayLength(vertexShaderNames) == arrayLength(inputElementDescriptions));
+
+  class PrimusShaderRegistry : public ShaderRegistry
+  {
+    private:
+
+      virtual void getInputElementDescriptions(const wchar_t* vertexShaderName, const D3D11_INPUT_ELEMENT_DESC** descriptions, int64* count) override
+      {
+        for (int64 i = 0; i < arrayLength(vertexShaderNames); ++i)
+        {
+          if (wcscmp(vertexShaderName, vertexShaderNames[i]) == 0)
+          {
+            *descriptions = inputElementDescriptions[i].descriptions;
+            *count = inputElementDescriptions[i].count;
+            return;
+          }
+        }
+
+        *descriptions = nullptr;
+        *count = 0;
+      }
+  };
+  PrimusShaderRegistry shaderRegistry;
 
 #ifdef DAR_DEBUG
   CComPtr<ID3D11Debug> debug = nullptr;
@@ -360,7 +400,7 @@ D3D11Renderer::D3D11Renderer(HWND window, TaskScheduler& taskScheduler)
   debugTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 #endif
 
-  shaderRegistry.reload(L"shaders\\build", taskScheduler);
+  shaderRegistry.reload(L"shaders\\build");
 }
 
 void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)

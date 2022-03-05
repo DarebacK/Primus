@@ -23,7 +23,7 @@
     <ClInclude Include="..\..\include\Primus\D3D11Renderer.hpp">
       <Filter>Source Files\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\Primus\PrimusShaderRegistry.hpp">
+    <ClInclude Include="..\..\include\Primus\ShaderRegistry.hpp">
       <Filter>Source Files\include</Filter>
     </ClInclude>
   </ItemGroup>
@@ -33,7 +33,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\include\Primus\PrimusShaders.inl">
+    <None Include="..\..\include\Primus\Shaders.inl">
       <Filter>Source Files\include</Filter>
     </None>
   </ItemGroup>

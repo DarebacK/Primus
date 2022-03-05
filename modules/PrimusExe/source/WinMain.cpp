@@ -100,6 +100,9 @@ namespace
       case VK_F1:
         nextFrameState->input.keyboard.F1.pressedDown = true;
         break;
+      case VK_F5:
+        nextFrameState->input.keyboard.F5.pressedDown = true;
+        break;
       case VK_MENU:
         nextFrameState->input.keyboard.rightAlt.pressedDown = true;
         break;
@@ -145,6 +148,9 @@ namespace
       switch (wParam) {
       case VK_F1:
         nextFrameState->input.keyboard.F1.pressedUp = true;
+        break;
+      case VK_F5:
+        nextFrameState->input.keyboard.F5.pressedUp = true;
         break;
       case VK_MENU:
         nextFrameState->input.keyboard.rightAlt.pressedUp = true;

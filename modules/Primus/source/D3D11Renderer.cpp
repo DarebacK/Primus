@@ -1,7 +1,7 @@
 #define DAR_MODULE_NAME "D3D11Renderer"
 
 #include "Primus/D3D11Renderer.hpp"
-#include "Primus/PrimusShaderRegistry.hpp"
+#include "Primus/ShaderRegistry.hpp"
 
 #include "Core/Task.hpp"
 
@@ -16,6 +16,16 @@ using namespace D3D11;
 namespace D3D11
 {
   CComPtr<ID3D11Device> device;
+
+  #define VERTEX_SHADER(name, ...) CComPtr<ID3D11VertexShader> name ## VertexShader ;
+  #include VERTEX_SHADERS
+  #undef VERTEX_SHADER
+  #define VERTEX_SHADER(name, ...) CComPtr<ID3D11InputLayout> name ## InputLayout ;
+  #include VERTEX_SHADERS
+  #undef VERTEX_SHADER
+  #define PIXEL_SHADER(name) CComPtr<ID3D11PixelShader> name ## PixelShader ;
+  #include PIXEL_SHADERS
+  #undef PIXEL_SHADER
 }
 
 namespace
@@ -439,6 +449,9 @@ void D3D11Renderer::render(const FrameState& frameState)
 #ifdef DAR_DEBUG
   if (frameState.input.keyboard.F1.pressedDown) {
     switchWireframeState();
+  }
+  if (frameState.input.keyboard.F5.pressedDown) {
+    shaderRegistry.reload(L"shaders\\build");
   }
 
   DXGI_QUERY_VIDEO_MEMORY_INFO videoMemoryInfo{};

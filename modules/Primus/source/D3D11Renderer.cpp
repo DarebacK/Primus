@@ -1,10 +1,9 @@
 #define DAR_MODULE_NAME "D3D11Renderer"
 
 #include "Primus/D3D11Renderer.hpp"
+#include "Primus/PrimusShaderRegistry.hpp"
 
 #include "Core/Task.hpp"
-
-#include "D3D11/ShaderRegistry.hpp"
 
 #include <vector>
 
@@ -55,44 +54,7 @@ namespace
   constexpr float farPlane = 100.f;
   Mat4f projectionMatrix = Mat4f::identity();
 
-  // TODO: simplify this using a macro in a separate inline file.
-  D3D11_INPUT_ELEMENT_DESC fullScreenElementDescription[] = {
-    {"SV_VertexID", 0, DXGI_FORMAT_R32_UINT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0} // FullScreen
-  };
-  const wchar_t* vertexShaderNames[] = {
-    L"FullScreen"
-  };
-  struct InputElementDescriptionsEntry
-  {
-    const D3D11_INPUT_ELEMENT_DESC* descriptions;
-    int64 count;
-  };
-  InputElementDescriptionsEntry inputElementDescriptions[] = {
-      {fullScreenElementDescription, arrayLength(fullScreenElementDescription)}
-  };
-  static_assert(arrayLength(vertexShaderNames) == arrayLength(inputElementDescriptions));
-
-  class PrimusShaderRegistry : public ShaderRegistry
-  {
-    private:
-
-      virtual void getInputElementDescriptions(const wchar_t* vertexShaderName, const D3D11_INPUT_ELEMENT_DESC** descriptions, int64* count) override
-      {
-        for (int64 i = 0; i < arrayLength(vertexShaderNames); ++i)
-        {
-          if (wcscmp(vertexShaderName, vertexShaderNames[i]) == 0)
-          {
-            *descriptions = inputElementDescriptions[i].descriptions;
-            *count = inputElementDescriptions[i].count;
-            return;
-          }
-        }
-
-        *descriptions = nullptr;
-        *count = 0;
-      }
-  };
-  PrimusShaderRegistry shaderRegistry;
+  ShaderRegistry shaderRegistry;
 
 #ifdef DAR_DEBUG
   CComPtr<ID3D11Debug> debug = nullptr;

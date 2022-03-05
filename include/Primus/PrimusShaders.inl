@@ -1,0 +1,7 @@
+#ifndef VERTEX_SHADER
+  #define VERTEX_SHADER(name, ...)
+#endif // !VERTEX_SHADER
+
+VERTEX_SHADER(FullScreen, { "SV_VertexID", 0, DXGI_FORMAT_R32_UINT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 })
+
+#undef VERTEX_SHADER

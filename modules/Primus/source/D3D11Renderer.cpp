@@ -18,11 +18,11 @@ using namespace D3D11;
 namespace D3D11
 {
   CComPtr<ID3D11Device> device;
+  CComPtr<ID3D11DeviceContext> context = nullptr;
 }
 
 namespace
 {
-  CComPtr<ID3D11DeviceContext> context = nullptr;
   D3D_FEATURE_LEVEL featureLevel = (D3D_FEATURE_LEVEL)0;
   CComPtr<IDXGIAdapter3> dxgiAdapter;
   DXGI_ADAPTER_DESC2 dxgiAdapterDesc{};
@@ -370,18 +370,9 @@ static void resolveRenderTargetIntoBackBuffer()
   }
 }
 
-void D3D11Renderer::render(const FrameState& frameState)
+static void displayVideoMemoryInfo()
 {
-  d2Context->BeginDraw();
-
-#ifdef DAR_DEBUG
-  if (frameState.input.keyboard.F1.pressedDown) {
-    switchWireframeState();
-  }
-  if (frameState.input.keyboard.F5.pressedDown) {
-    reloadShaders(L"shaders\\build");
-  }
-
+#if defined(DAR_DEBUG)
   DXGI_QUERY_VIDEO_MEMORY_INFO videoMemoryInfo{};
   UINT64 videoMemoryUsageMB = 0;
   if (SUCCEEDED(dxgiAdapter->QueryVideoMemoryInfo(
@@ -396,6 +387,47 @@ void D3D11Renderer::render(const FrameState& frameState)
   }
   UINT64 videoMemoryTotalMB = dxgiAdapterDesc.DedicatedVideoMemory / (1ull << 20ull);
   debugText(L"VRAM %llu MB / %llu MB", videoMemoryUsageMB, videoMemoryTotalMB);
+#endif 
+}
+
+static void drawDebugText(const FrameState& frameState)
+{
+  #ifdef DAR_DEBUG
+    // DEBUG TEXT
+    CComPtr<IDWriteTextLayout> debugTextLayout;
+    dwriteFactory->CreateTextLayout(
+      _debugText,
+      _debugTextLength,
+      debugTextFormat,
+      (FLOAT)frameState.clientAreaWidth,
+      (FLOAT)frameState.clientAreaHeight,
+      &debugTextLayout
+    );
+    d2Context->DrawTextLayout({ 5.f, 5.f }, debugTextLayout, debugTextBrush);
+  #endif
+}
+
+static void render2D(const FrameState& frameState)
+{
+  d2Context->BeginDraw();
+
+  drawDebugText(frameState);
+
+  d2Context->EndDraw();
+}
+
+void D3D11Renderer::render(const FrameState& frameState)
+{
+  
+#ifdef DAR_DEBUG
+  if (frameState.input.keyboard.F1.pressedDown) {
+    switchWireframeState();
+  }
+  if (frameState.input.keyboard.F5.pressedDown) {
+    reloadShaders(L"shaders\\build");
+  }
+
+  displayVideoMemoryInfo();
 #endif
 
   context->ClearRenderTargetView(renderTargetView, clearColor);
@@ -403,21 +435,8 @@ void D3D11Renderer::render(const FrameState& frameState)
 
   resolveRenderTargetIntoBackBuffer();
 
-#ifdef DAR_DEBUG
-  // DEBUG TEXT
-  CComPtr<IDWriteTextLayout> debugTextLayout;
-  dwriteFactory->CreateTextLayout(
-    _debugText,
-    _debugTextLength,
-    debugTextFormat,
-    (FLOAT)frameState.clientAreaWidth,
-    (FLOAT)frameState.clientAreaHeight,
-    &debugTextLayout
-  );
-  d2Context->DrawTextLayout({ 5.f, 5.f }, debugTextLayout, debugTextBrush);
-#endif
+  render2D(frameState);
 
-  d2Context->EndDraw();
   UINT presentFlags = 0;
   swapChain->Present(1, presentFlags);
 }

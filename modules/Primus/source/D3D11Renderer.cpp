@@ -62,68 +62,6 @@ namespace
   CComPtr<IDWriteTextFormat> debugTextFormat = nullptr;
 #endif
 
-  static void* loadShaderFile(const char* fileName, SIZE_T* shaderSize);
-  static ID3D11VertexShader* loadVertexShader(const char* shaderName, D3D11_INPUT_ELEMENT_DESC* inputElementDescs, UINT inputElementDescCount, ID3D11InputLayout** inputLayout);
-  static ID3D11PixelShader* loadPixelShader(const char* name);
-
-  static void* loadShaderFile(const char* fileName, SIZE_T* shaderSize)
-  {
-    HANDLE file = CreateFileA(fileName, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-    if (file == INVALID_HANDLE_VALUE) {
-      logError("Failed to load shader file %s", fileName);
-      return nullptr;
-    }
-    LARGE_INTEGER fileSize;
-    if (!GetFileSizeEx(file, &fileSize)) {
-      logError("Failed to get file size of shader file %s", fileName);
-      CloseHandle(file);
-      return nullptr;
-    }
-    static byte shaderLoadBuffer[64 * 1024];
-    DWORD bytesRead;
-    if (!ReadFile(file, shaderLoadBuffer, (DWORD)fileSize.QuadPart, &bytesRead, nullptr)) {
-      logError("Failed to read shader file %s", fileName);
-      CloseHandle(file);
-      return nullptr;
-    }
-    *shaderSize = bytesRead;
-    CloseHandle(file);
-    return shaderLoadBuffer;
-  }
-
-  static ID3D11VertexShader* loadVertexShader(const char* shaderName, D3D11_INPUT_ELEMENT_DESC* inputElementDescs, UINT inputElementDescCount, ID3D11InputLayout** inputLayout)
-  {
-    char shaderFileName[128];
-    _snprintf_s(shaderFileName, sizeof(shaderFileName), "%s.vs.cso", shaderName);
-    SIZE_T shaderCodeSize;
-    void* shaderCode = loadShaderFile(shaderFileName, &shaderCodeSize);
-    if (!shaderCode) {
-      return nullptr;
-    }
-    ID3D11VertexShader* vertexShader;
-    if (SUCCEEDED(device->CreateVertexShader(shaderCode, shaderCodeSize, nullptr, &vertexShader))) {
-      if (SUCCEEDED(device->CreateInputLayout(inputElementDescs, inputElementDescCount, shaderCode, shaderCodeSize, inputLayout))) {
-        return vertexShader;
-      }
-    }
-    else {
-      logError("Failed to create vertex shader %s", shaderName);
-      return nullptr;
-    }
-    return nullptr;
-  }
-
-  static ID3D11PixelShader* loadPixelShader(const char* name)
-  {
-    char shaderFileName[128];
-    _snprintf_s(shaderFileName, sizeof(shaderFileName), "%s.ps.cso", name);
-    SIZE_T shaderCodeSize;
-    void* shaderCode = loadShaderFile(shaderFileName, &shaderCodeSize);
-    ID3D11PixelShader* vertexShader;
-    device->CreatePixelShader(shaderCode, shaderCodeSize, nullptr, &vertexShader);
-    return vertexShader;
-  }
-
   static void setViewport(FLOAT width, FLOAT height)
   {
     D3D11_VIEWPORT viewport;

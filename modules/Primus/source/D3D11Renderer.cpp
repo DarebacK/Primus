@@ -11,21 +11,13 @@
 #include <dwrite_2.h>
 #include <d2d1_2.h>
 
+#include "D3D11/ShaderRegistryImpl.inl"
+
 using namespace D3D11;
 
 namespace D3D11
 {
   CComPtr<ID3D11Device> device;
-
-  #define VERTEX_SHADER(name, ...) CComPtr<ID3D11VertexShader> name ## VertexShader ;
-  #include VERTEX_SHADERS
-  #undef VERTEX_SHADER
-  #define VERTEX_SHADER(name, ...) CComPtr<ID3D11InputLayout> name ## InputLayout ;
-  #include VERTEX_SHADERS
-  #undef VERTEX_SHADER
-  #define PIXEL_SHADER(name) CComPtr<ID3D11PixelShader> name ## PixelShader ;
-  #include PIXEL_SHADERS
-  #undef PIXEL_SHADER
 }
 
 namespace
@@ -63,8 +55,6 @@ namespace
   constexpr float nearPlane = 1.f;
   constexpr float farPlane = 100.f;
   Mat4f projectionMatrix = Mat4f::identity();
-
-  ShaderRegistry shaderRegistry;
 
 #ifdef DAR_DEBUG
   CComPtr<ID3D11Debug> debug = nullptr;
@@ -372,7 +362,7 @@ D3D11Renderer::D3D11Renderer(HWND window, TaskScheduler& taskScheduler)
   debugTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 #endif
 
-  shaderRegistry.reload(L"shaders\\build");
+  reloadShaders(L"shaders\\build");
 }
 
 void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)
@@ -451,7 +441,7 @@ void D3D11Renderer::render(const FrameState& frameState)
     switchWireframeState();
   }
   if (frameState.input.keyboard.F5.pressedDown) {
-    shaderRegistry.reload(L"shaders\\build");
+    reloadShaders(L"shaders\\build");
   }
 
   DXGI_QUERY_VIDEO_MEMORY_INFO videoMemoryInfo{};

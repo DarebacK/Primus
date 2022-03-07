@@ -12,6 +12,8 @@
 #include <d2d1_2.h>
 
 #include "D3D11/ShaderRegistryImpl.inl"
+#include "IndexBuffers.inl"
+#include "ConstantBuffers.inl"
 
 using namespace D3D11;
 
@@ -173,6 +175,21 @@ namespace
 
 } // anonymous namespace
 
+static void initializeTerrain()
+{
+  if (FAILED(device->CreateBuffer(&terrainIndexBufferDescription, &terrainIndexBufferData, &terrainIndexBuffer)))
+  {
+    logError("Failed to create terrain index buffer.");
+    return;
+  }
+
+  if (FAILED(device->CreateBuffer(&terrainConstantBufferDescription, nullptr, &terrainConstantBuffer)))
+  {
+    logError("Failed to create terrain constant buffer.");
+    return;
+  }
+}
+
 D3D11Renderer::D3D11Renderer(HWND window, TaskScheduler& taskScheduler)
 {
   // DEVICE
@@ -301,6 +318,8 @@ D3D11Renderer::D3D11Renderer(HWND window, TaskScheduler& taskScheduler)
 #endif
 
   reloadShaders(L"shaders\\build");
+
+  initializeTerrain();
 }
 
 void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)
@@ -407,6 +426,31 @@ static void drawDebugText(const FrameState& frameState)
   #endif
 }
 
+static void renderTerrain(const FrameState& frameState)
+{
+  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  context->IASetInputLayout(FullScreenInputLayout);
+  context->IASetIndexBuffer(terrainIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+  context->VSSetShader(TerrainVertexShader, nullptr, 0);
+  context->VSSetConstantBuffers(0, 1, &terrainConstantBuffer.p);
+  context->PSSetShader(TerrainPixelShader, nullptr, 0);
+
+  D3D11_MAPPED_SUBRESOURCE mappedConstantBuffer;
+  context->Map(terrainConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedConstantBuffer);
+  const Mat4f transform = Mat4f::identity();
+  memcpy(mappedConstantBuffer.pData, &transform, sizeof(transform));
+  context->Unmap(terrainConstantBuffer, 0);
+
+  context->DrawIndexed(arrayLength(terrainIndexBufferIndices), 0, 0);
+}
+
+static void render3D(const FrameState& frameState)
+{
+  renderTerrain(frameState);
+
+  resolveRenderTargetIntoBackBuffer();
+}
+
 static void render2D(const FrameState& frameState)
 {
   d2Context->BeginDraw();
@@ -433,7 +477,7 @@ void D3D11Renderer::render(const FrameState& frameState)
   context->ClearRenderTargetView(renderTargetView, clearColor);
   context->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-  resolveRenderTargetIntoBackBuffer();
+  render3D(frameState);
 
   render2D(frameState);
 

@@ -36,5 +36,16 @@
     <None Include="..\..\include\Primus\Shaders.inl">
       <Filter>Source Files\include</Filter>
     </None>
+    <None Include="source\IndexBuffers.inl">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="source\ConstantBuffers.inl">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="source\shaders\Terrain.ps.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

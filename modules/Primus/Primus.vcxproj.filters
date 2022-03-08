@@ -56,5 +56,8 @@
     <FxCompile Include="source\shaders\Terrain.ps.hlsl">
       <Filter>Source Files\shaders</Filter>
     </FxCompile>
+    <FxCompile Include="source\shaders\Terrain.vs.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

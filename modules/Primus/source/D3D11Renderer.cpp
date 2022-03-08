@@ -409,7 +409,7 @@ static void displayVideoMemoryInfo()
 #endif 
 }
 
-static void drawDebugText(const FrameState& frameState)
+static void drawDebugText(const Frame& frameState)
 {
   #ifdef DAR_DEBUG
     // DEBUG TEXT
@@ -426,7 +426,7 @@ static void drawDebugText(const FrameState& frameState)
   #endif
 }
 
-static void renderTerrain(const FrameState& frameState)
+static void renderTerrain(const Frame& frame)
 {
   context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   context->IASetInputLayout(FullScreenInputLayout);
@@ -437,21 +437,21 @@ static void renderTerrain(const FrameState& frameState)
 
   D3D11_MAPPED_SUBRESOURCE mappedConstantBuffer;
   context->Map(terrainConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedConstantBuffer);
-  const Mat4f transform = Mat4f::identity();
+  const Mat4f transform = frame.camera.viewProjection;
   memcpy(mappedConstantBuffer.pData, &transform, sizeof(transform));
   context->Unmap(terrainConstantBuffer, 0);
 
   context->DrawIndexed(arrayLength(terrainIndexBufferIndices), 0, 0);
 }
 
-static void render3D(const FrameState& frameState)
+static void render3D(const Frame& frameState)
 {
   renderTerrain(frameState);
 
   resolveRenderTargetIntoBackBuffer();
 }
 
-static void render2D(const FrameState& frameState)
+static void render2D(const Frame& frameState)
 {
   d2Context->BeginDraw();
 
@@ -460,7 +460,7 @@ static void render2D(const FrameState& frameState)
   d2Context->EndDraw();
 }
 
-void D3D11Renderer::render(const FrameState& frameState)
+void D3D11Renderer::render(const Frame& frameState)
 {
   
 #ifdef DAR_DEBUG

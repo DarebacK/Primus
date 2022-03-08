@@ -2,7 +2,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-#include "Primus/FrameState.hpp"
+#include "Primus/Frame.hpp"
 
 class TaskScheduler;
 
@@ -16,5 +16,5 @@ public:
 
   void onWindowResize(int clientAreaWidth, int clientAreaHeight);
 
-  void render(const FrameState& frameState);
+  void render(const Frame& frameState);
 };

@@ -17,18 +17,27 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\Primus\FrameState.hpp">
-      <Filter>Source Files\include</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\Primus\D3D11Renderer.hpp">
       <Filter>Source Files\include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\Primus\ShaderRegistry.hpp">
       <Filter>Source Files\include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\Primus\Frame.hpp">
+      <Filter>Source Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\Primus\Camera.hpp">
+      <Filter>Source Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\Primus\Game.hpp">
+      <Filter>Source Files\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\D3D11Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

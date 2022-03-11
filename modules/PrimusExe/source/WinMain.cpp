@@ -340,6 +340,8 @@ int WINAPI WinMain(
   LARGE_INTEGER lastCounterValue;
   QueryPerformanceCounter(&lastCounterValue);
 
+  game.initialize(*lastFrame);
+
   MSG message{};
   while (message.message != WM_QUIT) {
     if (PeekMessageA(&message, nullptr, 0, 0, PM_REMOVE)) {

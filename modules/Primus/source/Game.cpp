@@ -10,7 +10,7 @@ static constexpr float zoomMax = 20.f;
 
 void Game::initialize(Frame& firstFrame)
 {
-  firstFrame.camera.position = Vec3f{ 0.f, 10.f, 0.f };
+
 }
 
 void Game::update(const Frame& lastFrame, Frame& nextFrame)

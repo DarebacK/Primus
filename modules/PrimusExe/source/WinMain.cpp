@@ -319,8 +319,7 @@ int WINAPI WinMain(
     logWarning("Failed to set thread affinity for the main thread.");
   }
 
-  const int workerThreadCount = max(coreCount - 1, 1);
-  taskScheduler.initialize(workerThreadCount, 1);
+  taskScheduler.initialize();
 
   D3D11Renderer renderer(window, taskScheduler);
 

@@ -10,12 +10,12 @@
 #define TILE_SIZE 512
 #define TILE_ZOOM 8
 
-constexpr int64 tileXMin = 136;
-constexpr int64 tileXMax = 139; 
+constexpr int64 tileXMin = 133;
+constexpr int64 tileXMax = 141; 
 constexpr int64 widthInTiles = tileXMax - tileXMin + 1;
 constexpr int64 widthInPixels = widthInTiles * TILE_SIZE;
-constexpr int64 tileYMin = 98;
-constexpr int64 tileYMax = 99;
+constexpr int64 tileYMin = 90;
+constexpr int64 tileYMax = 101;
 constexpr int64 heightInTiles = tileYMax - tileYMin + 1;
 constexpr int64 heightInPixels = TILE_SIZE * heightInTiles;
 constexpr int64 tileCount = widthInTiles * heightInTiles;
@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  if (!writePngBigEndian("heightmap.png", reinterpret_cast<byte*>(heightmap.data()), widthInPixels, heightInPixels, 1, 16))
+  if (!writePngLosslessGrayscaleBigEndian("heightmap.png", reinterpret_cast<byte*>(heightmap.data()), widthInPixels, heightInPixels, 1, 16))
   {
     logError("Failed to write png data.");
     return 10;

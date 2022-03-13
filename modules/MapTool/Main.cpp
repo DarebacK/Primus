@@ -10,6 +10,8 @@
 const wchar_t* server = L"tile.nextzen.org";
 const wchar_t* requestObjectName = L"tilezen/terrain/v1/512/terrarium/8/139/98.png?api_key=XeM2Tf-mRS6G1orxmShMzg";
 
+constexpr uint16 elevationOffset = 11000; // Used to convert below sea elevations to unsigned int range. 11000 because deepest point is ~10935 meters.
+
 class InternetHandle
 {
 public:
@@ -117,14 +119,14 @@ int main(int argc, char* argv[])
     return 8;
   }
 
-  if (pngResult.channelCount != 4)
+  if (pngResult.channelCount != 4) // For some reason the terarrium image file has alpha channel despite it not containing any information.
   {
     logError("PNG data has wrong channel count %lld", pngResult.channelCount);
     return 9;
   }
 
   const byte* readDataIterator = pngResult.data;
-  uint16* writeDataIterator = reinterpret_cast<uint16*>(pngResult.data);
+  uint8* writeDataIterator = reinterpret_cast<uint8*>(pngResult.data);
   for (int64 y = 0; y < pngResult.height; ++y)
   {
     for (int64 x = 0; x < pngResult.width; ++x)
@@ -132,14 +134,14 @@ int main(int argc, char* argv[])
       uint8 r = *readDataIterator++;
       uint8 g = *readDataIterator++;
       uint8 b = *readDataIterator++;
-      uint16 elevationInMeters = static_cast<uint16>(r) * 256 + static_cast<uint16>(g) + round(float(b) / 256) - static_cast<uint16>(32768);
+      uint16 elevationInMeters = uint16(r) * uint16(256) + uint16(g) + uint16(round(float(b) / 256)) - uint16(32768 - elevationOffset); // elevation offset prevents going into negative numbers.
+      *writeDataIterator++ = elevationInMeters >> 8; // little to big endian
       *writeDataIterator++ = elevationInMeters;
       readDataIterator++; // skip alpha, it has no information anyway.
     }
   }
 
-
-  if (!writePng("output.png", pngResult.data, pngResult.width, pngResult.height, 1, pngResult.width * 2))
+  if (!writePngBigEndian("output.png", pngResult.data, pngResult.width, pngResult.height, 1, 16))
   {
     logError("Failed to write png data.");
     return 10;

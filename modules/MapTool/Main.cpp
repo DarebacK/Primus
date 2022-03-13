@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
   }
 
   const byte* readDataIterator = pngResult.data;
-  uint8* writeDataIterator = reinterpret_cast<uint8*>(pngResult.data);
+  uint16* writeDataIterator = reinterpret_cast<uint16*>(pngResult.data);
   for (int64 y = 0; y < pngResult.height; ++y)
   {
     for (int64 x = 0; x < pngResult.width; ++x)
@@ -135,13 +135,12 @@ int main(int argc, char* argv[])
       uint8 g = *readDataIterator++;
       uint8 b = *readDataIterator++;
       uint16 elevationInMeters = uint16(r) * uint16(256) + uint16(g) + uint16(round(float(b) / 256)) - uint16(32768 - elevationOffset); // elevation offset prevents going into negative numbers.
-      *writeDataIterator++ = elevationInMeters >> 8; // little to big endian
-      *writeDataIterator++ = elevationInMeters;
+      *writeDataIterator++ = nativeToBigEndian(elevationInMeters);
       readDataIterator++; // skip alpha, it has no information anyway.
     }
   }
 
-  if (!writePngBigEndian("output.png", pngResult.data, pngResult.width, pngResult.height, 1, 16))
+  if (!writePngBigEndian("heightmap.png", pngResult.data, pngResult.width, pngResult.height, 1, 16))
   {
     logError("Failed to write png data.");
     return 10;

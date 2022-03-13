@@ -1,3 +1,5 @@
+#define NOMINMAX
+
 #include "Core/Core.hpp"
 #include "Core/Image.hpp"
 
@@ -8,17 +10,18 @@
 #include <fstream>
 
 #define TILE_SIZE 512
-#define TILE_ZOOM 8
+#define TILE_ZOOM 7
 
-constexpr int64 tileXMin = 133;
-constexpr int64 tileXMax = 141; 
+constexpr int64 tileXMin = 66;
+constexpr int64 tileXMax = 70; 
 constexpr int64 widthInTiles = tileXMax - tileXMin + 1;
 constexpr int64 widthInPixels = widthInTiles * TILE_SIZE;
-constexpr int64 tileYMin = 90;
-constexpr int64 tileYMax = 101;
+constexpr int64 tileYMin = 45;
+constexpr int64 tileYMax = 50;
 constexpr int64 heightInTiles = tileYMax - tileYMin + 1;
 constexpr int64 heightInPixels = TILE_SIZE * heightInTiles;
 constexpr int64 tileCount = widthInTiles * heightInTiles;
+constexpr bool useAutoExposure = false;
 
 const wchar_t* server = L"tile.nextzen.org";
 const wchar_t* requestObjectNameBegin = L"tilezen/terrain/v1/" WSTRINGIFY_DEFINE(TILE_SIZE) L"/terrarium/" WSTRINGIFY_DEFINE(TILE_ZOOM);
@@ -76,6 +79,8 @@ int main(int argc, char* argv[])
   const wchar_t* acceptTypes[] = { L"image/png", NULL };
   constexpr DWORD httpRequestFlags = INTERNET_FLAG_KEEP_CONNECTION | INTERNET_FLAG_CACHE_IF_NET_FAIL | INTERNET_FLAG_SECURE;
 
+  uint16 minElevation = std::numeric_limits<uint16>::max();
+  uint16 maxElevation = 0;
   for (int32 tileY = tileYMin; tileY <= tileYMax; tileY++)
   {
     const int64 tileYIndex = tileY - tileYMin;
@@ -163,11 +168,26 @@ int main(int argc, char* argv[])
           uint8 g = *readDataIterator++;
           uint8 b = *readDataIterator++;
           uint16 elevationInMeters = uint16(r) * uint16(256) + uint16(g) + uint16(round(float(b) / 256)) - uint16(32768 - elevationOffset); // elevation offset prevents going into negative numbers.
-          heightmap[tileYIndex*widthInPixels*TILE_SIZE + tileXIndex*TILE_SIZE + y*widthInPixels + x] = nativeToBigEndian(elevationInMeters);
+          if constexpr (useAutoExposure)
+          {
+            minElevation = std::min(minElevation, elevationInMeters);
+            maxElevation = std::max(maxElevation, elevationInMeters);
+          }
+          heightmap[tileYIndex*widthInPixels*TILE_SIZE + tileXIndex*TILE_SIZE + y*widthInPixels + x] = elevationInMeters;
           readDataIterator++; // skip alpha, it has no information anyway.
         }
       }
     }
+  }
+
+  const float multiplier = std::numeric_limits<uint16>::max() / float(maxElevation - minElevation);
+  for (uint16& pixel : heightmap)
+  {
+    if constexpr (useAutoExposure)
+    {
+      pixel = (pixel - minElevation) * multiplier;
+    }
+    pixel = nativeToBigEndian(pixel);
   }
 
   if (!writePngLosslessGrayscaleBigEndian("heightmap.png", reinterpret_cast<byte*>(heightmap.data()), widthInPixels, heightInPixels, 1, 16))

@@ -15,11 +15,14 @@
     <ClInclude Include="..\..\include\Primus\D3D11Renderer.hpp" />
     <ClInclude Include="..\..\include\Primus\Frame.hpp" />
     <ClInclude Include="..\..\include\Primus\Game.hpp" />
+    <ClInclude Include="..\..\include\Primus\Map.hpp" />
+    <ClInclude Include="..\..\include\Primus\Primus.hpp" />
     <ClInclude Include="..\..\include\Primus\ShaderRegistry.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\D3D11Renderer.cpp" />
     <ClCompile Include="source\Game.cpp" />
+    <ClCompile Include="source\Map.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\DarEngine\modules\Core\Core.vcxproj">
@@ -119,6 +122,9 @@
     <Lib>
       <AdditionalDependencies>d3d11.lib;D2d1.lib;Dwrite.lib;</AdditionalDependencies>
     </Lib>
+    <PostBuildEvent>
+      <Command>xcopy "$(SolutionDir)assets" "$(OutDir)assets" /d /i /s /e /y /r</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -144,6 +150,9 @@
     <Lib>
       <AdditionalDependencies>d3d11.lib;D2d1.lib;Dwrite.lib;</AdditionalDependencies>
     </Lib>
+    <PostBuildEvent>
+      <Command>xcopy "$(SolutionDir)assets" "$(OutDir)assets" /d /i /s /e /y /r</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -244,9 +244,9 @@ static void debugShowResourcesUsage()
 #endif
 }
 
-static void showErrorMessageBox(const char* text, const char* caption)
+static void showErrorMessageBox(const wchar_t* text, const wchar_t* caption)
 {
-  MessageBoxA(window, text, caption, MB_OK | MB_ICONERROR);
+  MessageBox(window, text, caption, MB_OK | MB_ICONERROR);
 }
 
 static Vec2i getCursorPosition()
@@ -280,7 +280,7 @@ int WINAPI WinMain(
   windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
   windowClass.lpszClassName = L"Game window class";
   if (!RegisterClass(&windowClass)) {
-    showErrorMessageBox("Failed to register window class.", "Fatal error");
+    showErrorMessageBox(L"Failed to register window class.", L"Fatal error");
     return -1;
   }
 
@@ -305,7 +305,7 @@ int WINAPI WinMain(
     nullptr
   );
   if (!window) {
-    showErrorMessageBox("Failed to create game window", "Fatal error");
+    showErrorMessageBox(L"Failed to create game window", L"Fatal error");
     return -1;
   }
 
@@ -339,7 +339,11 @@ int WINAPI WinMain(
   LARGE_INTEGER lastCounterValue;
   QueryPerformanceCounter(&lastCounterValue);
 
-  game.initialize(*lastFrame);
+  if (!game.tryInitialize(*lastFrame))
+  {
+    showErrorMessageBox(L"Failed to initialize game.", L"Fatal error");
+    return -1;
+  }
 
   MSG message{};
   while (message.message != WM_QUIT) {

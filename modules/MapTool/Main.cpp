@@ -168,26 +168,31 @@ int main(int argc, char* argv[])
           uint8 g = *readDataIterator++;
           uint8 b = *readDataIterator++;
           uint16 elevationInMeters = uint16(r) * uint16(256) + uint16(g) + uint16(round(float(b) / 256)) - uint16(32768 - elevationOffset); // elevation offset prevents going into negative numbers.
+          int64 heightmapIndex = tileYIndex * widthInPixels * TILE_SIZE + tileXIndex * TILE_SIZE + y * widthInPixels + x;
           if constexpr (useAutoExposure)
           {
             minElevation = std::min(minElevation, elevationInMeters);
             maxElevation = std::max(maxElevation, elevationInMeters);
+            heightmap[heightmapIndex] = elevationInMeters;
           }
-          heightmap[tileYIndex*widthInPixels*TILE_SIZE + tileXIndex*TILE_SIZE + y*widthInPixels + x] = elevationInMeters;
+          else
+          {
+            heightmap[heightmapIndex] = nativeToBigEndian(elevationInMeters);
+          }
           readDataIterator++; // skip alpha, it has no information anyway.
         }
       }
     }
   }
 
-  const float multiplier = std::numeric_limits<uint16>::max() / float(maxElevation - minElevation);
-  for (uint16& pixel : heightmap)
+  if constexpr (useAutoExposure)
   {
-    if constexpr (useAutoExposure)
+    const float multiplier = std::numeric_limits<uint16>::max() / float(maxElevation - minElevation);
+    for (uint16& pixel : heightmap)
     {
       pixel = (pixel - minElevation) * multiplier;
+      pixel = nativeToBigEndian(pixel);
     }
-    pixel = nativeToBigEndian(pixel);
   }
 
   if (!writePngLosslessGrayscaleBigEndian("heightmap.png", reinterpret_cast<byte*>(heightmap.data()), widthInPixels, heightInPixels, 1, 16))

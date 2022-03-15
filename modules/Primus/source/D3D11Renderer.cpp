@@ -190,7 +190,7 @@ static void initializeTerrain()
   }
 }
 
-D3D11Renderer::D3D11Renderer(HWND window, TaskScheduler& taskScheduler)
+bool D3D11Renderer::tryInitialize(HWND window)
 {
   // DEVICE
   UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
@@ -211,7 +211,7 @@ D3D11Renderer::D3D11Renderer(HWND window, TaskScheduler& taskScheduler)
     &context
   ))) {
     logError("Failed to create D3D11 device");
-    return;
+    return false;
   }
 
 #ifdef DAR_DEBUG
@@ -238,7 +238,7 @@ D3D11Renderer::D3D11Renderer(HWND window, TaskScheduler& taskScheduler)
           dxgiFactory->CreateSwapChainForHwnd(dxgiDevice, window, &swapChainDesc, NULL, NULL, &swapChain);
           if (!swapChain) {
             logError("Failed to create swapChain.");
-            return;
+            return false;
           }
         }
         swapChain->GetDesc1(&swapChainDesc);
@@ -248,7 +248,7 @@ D3D11Renderer::D3D11Renderer(HWND window, TaskScheduler& taskScheduler)
       }
       else {
         logError("Failed to get IDXGIFactory");
-        return;
+        return false;
       }
 
       if (FAILED(dxgiAdapter->GetDesc2(&dxgiAdapterDesc))) {
@@ -257,7 +257,7 @@ D3D11Renderer::D3D11Renderer(HWND window, TaskScheduler& taskScheduler)
     }
     else {
       logError("Failed to get IDXGIAdapter.");
-      return;
+      return false;
     }
 
     // DirectWrite and Direct2D
@@ -281,24 +281,24 @@ D3D11Renderer::D3D11Renderer(HWND window, TaskScheduler& taskScheduler)
   }
   else {
     logError("Failed to get IDXGIDevice.");
-    return;
+    return false;
   }
 
   renderTarget = createRenderTarget();
   if (!renderTarget) {
     logError("Failed to create render target.");
-    return;
+    return false;
   }
 
   renderTargetView = createRenderTargetView(renderTarget, renderTargetDesc.Format);
   if (!renderTargetView) {
     logError("Failed to initialize render target view.");
-    return;
+    return false;
   }
   depthStencilView = createDepthStencilView();
   if (!depthStencilView) {
     logError("Failed to initialize depth stencil view.");
-    return;
+    return false;
   }
   context->OMSetRenderTargets(1, &renderTargetView.p, depthStencilView);
 
@@ -320,6 +320,8 @@ D3D11Renderer::D3D11Renderer(HWND window, TaskScheduler& taskScheduler)
   reloadShaders(L"shaders\\build");
 
   initializeTerrain();
+
+  return true;
 }
 
 void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)

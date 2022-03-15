@@ -6,12 +6,19 @@
 
 #define MAP_DIRECTORY ASSET_DIRECTORY L"/maps"
 
+Heightmap::~Heightmap()
+{
+  reset();
+}
+
 bool Heightmap::tryLoad(const wchar_t* mapName)
 {
+  reset();
+
   wchar_t mapFilePath[128];
   swprintf_s(mapFilePath, L"%ls/%ls/heightmap.png", MAP_DIRECTORY, mapName);
 
-  image = readPng(mapFilePath);
+  PngReadResult image = readPng(mapFilePath);
   if (!image.data || !image.width || !image.height)
   {
     logError("Failed to read heightmap png file %ls", mapFilePath);
@@ -24,17 +31,32 @@ bool Heightmap::tryLoad(const wchar_t* mapName)
     return false;
   }
 
+  data = reinterpret_cast<int16*>(image.data);
+  image.data = nullptr;
+  width = image.width;
+  height = image.height;
+
+  taskScheduler.parallelFor(0, image.height, [this](int64 i) {
+    uint16* const grayscaleDataRow = reinterpret_cast<uint16*>(data) + i * width;
+    int16* const elevationDataRow = reinterpret_cast<int16*>(grayscaleDataRow);
+    for (int64 x = 0; x < width; x++)
+    {
+      elevationDataRow[x] = static_cast<int16>(static_cast<int32>(bigEndianToNative(grayscaleDataRow[x])) - 11000);
+    }
+  });
+
   return true;
 }
 
-const uint16_t* Heightmap::getData() const
+void Heightmap::reset()
 {
-  return reinterpret_cast<uint16_t*>(image.data);
-}
-
-int64 Heightmap::getDataSize() const
-{
-  return image.height * image.width * 2;
+  if (data)
+  {
+    free(data);
+    data = nullptr;
+  }
+  width = 0;
+  height = 0;
 }
 
 bool Map::tryLoad(const wchar_t* mapName)

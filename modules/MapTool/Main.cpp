@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  if (!writePngLosslessGrayscaleBigEndian("heightmap.png", reinterpret_cast<byte*>(heightmap.data()), widthInPixels, heightInPixels, 1, 16))
+  if (!writePngGrayscaleBigEndian("heightmap.png", reinterpret_cast<byte*>(heightmap.data()), widthInPixels, heightInPixels, 1, 16))
   {
     logError("Failed to write png data.");
     return 10;

@@ -11,12 +11,22 @@ static constexpr float zoomMax = 20.f;
 
 Map currentMap;
 
-bool Game::tryInitialize(Frame& firstFrame)
+bool Game::tryInitialize(Frame& firstFrame, D3D11Renderer& renderer)
 {
-  return currentMap.tryLoad(L"italy");
+  if (!currentMap.tryLoad(L"italy"))
+  {
+    return false;
+  }
+
+  if (!renderer.tryLoadMap(currentMap))
+  {
+    return false;
+  }
+
+  return true;
 }
 
-void Game::update(const Frame& lastFrame, Frame& nextFrame)
+void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& renderer)
 {
   const Vec3f cameraPositionDelta = Vec3f
   { cameraSpeed * nextFrame.input.keyboard.d.pressedDown - cameraSpeed * nextFrame.input.keyboard.a.pressedDown , 
@@ -29,4 +39,6 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame)
   const float aspectRatio = static_cast<float>(lastFrame.clientAreaWidth) / lastFrame.clientAreaHeight;
   nextFrame.camera.projection = Mat4f::perspectiveProjectionD3d(verticalFieldOfViewRadians, aspectRatio, nearPlane, farPlane);
   nextFrame.camera.viewProjection = nextFrame.camera.view * nextFrame.camera.projection;
+
+  renderer.render(nextFrame);
 }

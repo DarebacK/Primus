@@ -46,8 +46,6 @@ namespace
   Frame* nextFrame = nullptr;
   int frameCount = 0;
 
-  TaskScheduler taskScheduler;
-
   LRESULT CALLBACK WindowProc(
     HWND   windowHandle,
     UINT   message,
@@ -209,8 +207,8 @@ static void debugShowResourcesUsage()
   // CPU
   static ULARGE_INTEGER lastCPU = {}, lastSysCPU = {}, lastUserCPU = {};
   static double percent = 0.;
-  static DWORD lastCheckTimeMs = 0;
-  DWORD currentTimeMs = GetTickCount();
+  static ULONGLONG lastCheckTimeMs = 0;
+  ULONGLONG currentTimeMs = GetTickCount64();
   if ((currentTimeMs - lastCheckTimeMs) > 1000) {
     ULARGE_INTEGER now, sys, user;
     GetSystemTimeAsFileTime((LPFILETIME)&now);
@@ -321,7 +319,11 @@ int WINAPI WinMain(
 
   taskScheduler.initialize();
 
-  D3D11Renderer renderer(window, taskScheduler);
+  D3D11Renderer renderer;
+  if (!renderer.tryInitialize(window)) {
+    showErrorMessageBox(L"Failed to initialize Direct3D11 renderer", L"Fatal error");
+    return -1;
+  }
 
   //Audio audio;
 
@@ -339,7 +341,7 @@ int WINAPI WinMain(
   LARGE_INTEGER lastCounterValue;
   QueryPerformanceCounter(&lastCounterValue);
 
-  if (!game.tryInitialize(*lastFrame))
+  if (!game.tryInitialize(*lastFrame, renderer))
   {
     showErrorMessageBox(L"Failed to initialize game.", L"Fatal error");
     return -1;
@@ -367,13 +369,11 @@ int WINAPI WinMain(
       debugText(L"%.3f s / %d fps", nextFrame->deltaTime, (int)(1.f / nextFrame->deltaTime));
       debugShowResourcesUsage();
 
-      game.update(*lastFrame, *nextFrame);
+      game.update(*lastFrame, *nextFrame, renderer);
 
       if (lastFrame->clientAreaWidth != clientAreaWidth || lastFrame->clientAreaHeight != clientAreaHeight) {
           renderer.onWindowResize(clientAreaWidth, clientAreaHeight);
       }
-
-      renderer.render(*nextFrame);
 
       //audio.update(*nextFrameState);
 

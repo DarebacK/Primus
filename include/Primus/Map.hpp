@@ -2,6 +2,7 @@
 
 #include "Core/Core.hpp"
 #include "Core/Image.hpp"
+#include "Core/Task.hpp"
 
 class Heightmap
 {
@@ -10,16 +11,20 @@ public:
   Heightmap() = default;
   Heightmap(const Heightmap& other) = delete;
   Heightmap(const Heightmap&& other) = delete;
-  ~Heightmap() = default;
+  ~Heightmap();
+
+  int16* data = nullptr; // elevation in meters.
+  int32 width = 0;
+  int32 height = 0;
 
   bool tryLoad(const wchar_t* mapName);
 
-  const uint16_t* getData() const;
-  int64 getDataSize() const;
+  int64 getDataSize() const { return width * height * 2; }
 
 private:
 
-  PngReadResult image;
+  void reset();
+
 };
 
 // Holds data with lifetime of a map

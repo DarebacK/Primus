@@ -6,7 +6,7 @@ static constexpr float verticalFieldOfViewRadians = degreesToRadians(74.f);
 static constexpr float nearPlane = 1.f;
 static constexpr float farPlane = 5000.f;
 static constexpr float cameraSpeed = 1.f;
-static constexpr float zoomMin = 5.f;
+static constexpr float zoomMin = 1.f;
 static constexpr float zoomMax = 20.f;
 
 Map currentMap;

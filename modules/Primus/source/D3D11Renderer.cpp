@@ -53,10 +53,22 @@ namespace
   CComPtr<IDWriteFactory2> dwriteFactory;
   CComPtr<ID2D1Device1> d2Device = nullptr;
   CComPtr<ID2D1DeviceContext1> d2Context = nullptr;
-  constexpr float verticalFieldOfView = 74.f;
-  constexpr float nearPlane = 1.f;
-  constexpr float farPlane = 100.f;
-  Mat4f projectionMatrix = Mat4f::identity();
+
+  CComPtr<ID3D11SamplerState> heightmapSampler;
+  const D3D11_SAMPLER_DESC heightmapSamplerDescription = {
+    D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+    D3D11_TEXTURE_ADDRESS_CLAMP,
+    D3D11_TEXTURE_ADDRESS_CLAMP,
+    D3D11_TEXTURE_ADDRESS_CLAMP,
+    0,
+    1,
+    D3D11_COMPARISON_ALWAYS,
+    {0, 0, 0, 0},
+    0,
+    0
+  };
+  CComPtr<ID3D11ShaderResourceView> heightmapTextureView;
+  CComPtr<ID3D11Texture2D> heightmapTexture;
 
 #ifdef DAR_DEBUG
   CComPtr<ID3D11Debug> debug = nullptr;
@@ -79,14 +91,6 @@ namespace
   static void updateViewport()
   {
     setViewport((FLOAT)renderTargetDesc.Width, (FLOAT)renderTargetDesc.Height);
-
-    float aspectRatio = (float)renderTargetDesc.Width / renderTargetDesc.Height;
-    projectionMatrix = Mat4f::perspectiveProjectionD3d(
-      degreesToRadians(verticalFieldOfView),
-      aspectRatio,
-      nearPlane,
-      farPlane
-    );
   }
 
   static CComPtr<ID3D11Texture2D> createRenderTarget()
@@ -370,6 +374,56 @@ void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)
   }
 }
 
+bool D3D11Renderer::tryLoadMap(const Map& map)
+{
+  const D3D11_TEXTURE2D_DESC heightmapTextureDescription = {
+    map.heightmap.width,
+    map.heightmap.height,
+    1,
+    1,
+    DXGI_FORMAT_R16_SNORM,
+    {1, 0},
+    D3D11_USAGE_IMMUTABLE,
+    D3D11_BIND_SHADER_RESOURCE,
+    0,
+    0
+  };
+
+  D3D11_SUBRESOURCE_DATA heightmapTextureData;
+  heightmapTextureData.pSysMem = map.heightmap.data;
+  heightmapTextureData.SysMemPitch = map.heightmap.width * 2;
+  heightmapTextureData.SysMemSlicePitch = 0;
+
+  heightmapTexture.Release();
+  if (FAILED(device->CreateTexture2D(&heightmapTextureDescription, &heightmapTextureData, &heightmapTexture)))
+  {
+    logError("Failed to create heightmap texture.");
+    return false;
+  }
+
+  D3D11_SHADER_RESOURCE_VIEW_DESC heightmapShaderResourceViewDescription;
+  heightmapShaderResourceViewDescription.Format = heightmapTextureDescription.Format;
+  heightmapShaderResourceViewDescription.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+  heightmapShaderResourceViewDescription.Texture2D.MostDetailedMip = 0;
+  heightmapShaderResourceViewDescription.Texture2D.MipLevels = 1;
+
+  heightmapTextureView.Release();
+  if (FAILED(device->CreateShaderResourceView(heightmapTexture, &heightmapShaderResourceViewDescription, &heightmapTextureView)))
+  {
+    logError("Failed to create heightmap shader resource view.");
+    return false;
+  }
+
+  heightmapSampler.Release();
+  if (FAILED(device->CreateSamplerState(&heightmapSamplerDescription, &heightmapSampler)))
+  {
+    logError("Failed to create heightmap texture sampler.");
+    return false;
+  }
+
+  return true;
+}
+
 static void switchWireframeState()
 {
 #ifdef DAR_DEBUG
@@ -436,10 +490,12 @@ static void renderTerrain(const Frame& frame)
   context->VSSetShader(TerrainVertexShader, nullptr, 0);
   context->VSSetConstantBuffers(0, 1, &terrainConstantBuffer.p);
   context->PSSetShader(TerrainPixelShader, nullptr, 0);
+  context->PSSetShaderResources(0, 1, &heightmapTextureView.p);
+  context->PSSetSamplers(0, 1, &heightmapSampler.p);
 
   D3D11_MAPPED_SUBRESOURCE mappedConstantBuffer;
   context->Map(terrainConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedConstantBuffer);
-  const Mat4f transform = frame.camera.viewProjection;
+  const Mat4f transform = Mat4x3f::scale(10.f, 1.f, 10.f) * frame.camera.viewProjection;
   memcpy(mappedConstantBuffer.pData, &transform, sizeof(transform));
   context->Unmap(terrainConstantBuffer, 0);
 

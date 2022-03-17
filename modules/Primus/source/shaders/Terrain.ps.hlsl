@@ -1,6 +1,16 @@
 #pragma pack_matrix(row_major)
 
-float4 pixelShaderMain() : SV_TARGET
+Texture2D heightmap;
+SamplerState heightmapSampler;
+
+struct Input
 {
-	return float4(0.5f, 0.5f, 0.5f, 1.0f);
+	float4 position : SV_POSITION;
+	float2 uv : TEXCOORD0;
+};
+
+float4 pixelShaderMain(Input input) : SV_TARGET
+{
+	float grayscale = (heightmap.Sample(heightmapSampler, input.uv).r + 1.f) / 2.f;
+	return float4(grayscale, grayscale, grayscale, 1.0f);
 }

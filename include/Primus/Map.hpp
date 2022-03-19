@@ -31,11 +31,13 @@ private:
 struct Map
 {
   Heightmap heightmap;
-  int64 widthInMeters = 30;
-  int64 heightInMeters = 40;
+  int64 widthInMeters = 1565430; // TODO: read these values from map.ini. Maybe using libconfini?
+  int64 heightInMeters = 1252344;
 
   float cameraZoomMin;
   float cameraZoomMax;
+  float cameraNearPlane;
+  float cameraFarPlane;
 
   bool tryLoad(const wchar_t* mapName, float verticalFieldOfViewRadians, float aspectRatio);
 };

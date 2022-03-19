@@ -3,9 +3,7 @@
 #include "Primus/Map.hpp"
 
 static constexpr float verticalFieldOfViewRadians = degreesToRadians(74.f);
-static constexpr float nearPlane = 1.f; // TODO: adjust clipping plane distances according to min/max elevation.
-static constexpr float farPlane = 5000.f; 
-static constexpr float cameraSpeed = 1.f;
+static constexpr float cameraSpeed = 0.1f;
 
 Map currentMap;
 
@@ -30,14 +28,36 @@ bool Game::tryInitialize(Frame& firstFrame, D3D11Renderer& renderer)
 
 void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& renderer)
 {
-  const Vec3f cameraPositionDelta = Vec3f
-  { cameraSpeed * nextFrame.input.keyboard.d.pressedDown - cameraSpeed * nextFrame.input.keyboard.a.pressedDown , 
-    -nextFrame.input.mouse.dWheel, 
-    cameraSpeed * nextFrame.input.keyboard.w.pressedDown - cameraSpeed * nextFrame.input.keyboard.s.pressedDown };
-  nextFrame.camera.position = lastFrame.camera.position + cameraPositionDelta;
-  nextFrame.camera.position.y = std::clamp(nextFrame.camera.position.y, currentMap.cameraZoomMin, currentMap.cameraZoomMax);
+  nextFrame.camera.position = lastFrame.camera.position;
+
+  // i.e. how many meters/units it is from camera center to the intersection of it's frustum with the map plane.
+  float cameraEdgeVerticalOffsetFromPosition = tan(verticalFieldOfViewRadians / 2.f) * nextFrame.camera.position.y;
+
+  const float currentCameraSpeed = cameraSpeed * cameraEdgeVerticalOffsetFromPosition;
+  nextFrame.camera.position.x += currentCameraSpeed * nextFrame.input.keyboard.d.pressedDown - currentCameraSpeed * nextFrame.input.keyboard.a.pressedDown;
+  nextFrame.camera.position.z += currentCameraSpeed * nextFrame.input.keyboard.w.pressedDown - currentCameraSpeed * nextFrame.input.keyboard.s.pressedDown;
+
+  if (nextFrame.input.mouse.dWheel > 0.f)
+  {
+    for (float i = 0.f; i < nextFrame.input.mouse.dWheel; ++i)
+    {
+      cameraEdgeVerticalOffsetFromPosition = tan(verticalFieldOfViewRadians / 2.f) * nextFrame.camera.position.y;
+      const float zoomInSpeed = cotan(verticalFieldOfViewRadians / 2.f) * cameraSpeed * cameraEdgeVerticalOffsetFromPosition;
+      nextFrame.camera.position.y += -zoomInSpeed;
+    }
+  }
+  else if (nextFrame.input.mouse.dWheel < 0.f)
+  {
+    for (float i = nextFrame.input.mouse.dWheel; i < 0.f; ++i)
+    {
+      cameraEdgeVerticalOffsetFromPosition = tan(verticalFieldOfViewRadians / 2.f) * nextFrame.camera.position.y;
+      const float zoomOutSpeed = cotan(verticalFieldOfViewRadians / 2.f) * ((1.f / (1.f - cameraSpeed)) - 1.f) * cameraEdgeVerticalOffsetFromPosition;
+      nextFrame.camera.position.y += zoomOutSpeed;
+    }
+  }
 
   // Clamp camera to map bounds
+  nextFrame.camera.position.y = std::clamp(nextFrame.camera.position.y, currentMap.cameraZoomMin, currentMap.cameraZoomMax);
   const float horizontalFieldOfView = verticalToHorizontalFieldOfView(verticalFieldOfViewRadians, nextFrame.aspectRatio);
   Vec2f cameraEdgeOffsetFromPosition = { tan(horizontalFieldOfView / 2.f) * nextFrame.camera.position.y, tan(verticalFieldOfViewRadians / 2.f) * nextFrame.camera.position.y };
   const float cameraLeftEdge = nextFrame.camera.position.x - cameraEdgeOffsetFromPosition.x;
@@ -68,7 +88,7 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   }
 
   nextFrame.camera.view = Mat4x3f::lookTo(nextFrame.camera.position, Vec3f{ 0.f, -1.f, 0.f }, Vec3f{ 0.f, 0.f, 1.f });
-  nextFrame.camera.projection = Mat4f::perspectiveProjectionD3d(verticalFieldOfViewRadians, nextFrame.aspectRatio, nearPlane, farPlane);
+  nextFrame.camera.projection = Mat4f::perspectiveProjectionD3d(verticalFieldOfViewRadians, nextFrame.aspectRatio, currentMap.cameraNearPlane, currentMap.cameraFarPlane);
   nextFrame.camera.viewProjection = nextFrame.camera.view * nextFrame.camera.projection;
 
   renderer.render(nextFrame, currentMap);

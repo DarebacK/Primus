@@ -34,8 +34,8 @@ struct Map
   int64 widthInMeters = 30;
   int64 heightInMeters = 40;
 
-  float cameraZoomMin = 1.f;
-  float cameraZoomMax = 100.f;
+  float cameraZoomMin;
+  float cameraZoomMax;
 
   bool tryLoad(const wchar_t* mapName, float verticalFieldOfViewRadians, float aspectRatio);
 };

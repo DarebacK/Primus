@@ -67,7 +67,7 @@ bool Map::tryLoad(const wchar_t* mapName, float verticalFieldOfViewRadians, floa
     return false;
   }
 
-  cameraZoomMin = 1.f;
+  cameraZoomMin = 2.f;
   const float horizontalFieldOfViewRadians = verticalToHorizontalFieldOfView(verticalFieldOfViewRadians, aspectRatio);
   const float cameraYToFitMapHorizontally = cotan(horizontalFieldOfViewRadians / 2.f) * (widthInMeters / 2.f);
   const float cameraYToFitMapVertically = cotan(verticalFieldOfViewRadians / 2.f) * (heightInMeters / 2.f);

@@ -331,9 +331,12 @@ int WINAPI WinMain(
 
   ShowWindow(window, SW_SHOWNORMAL);
 
-  Vec2i cursorPosition = getCursorPosition();
   lastFrame = frames.getLast(frameCount);
-  lastFrame->input.cursorPosition = cursorPosition;
+  lastFrame->input.cursorPosition = getCursorPosition();
+  lastFrame->clientAreaWidth = clientAreaWidth;
+  lastFrame->clientAreaHeight = clientAreaHeight;
+  lastFrame->aspectRatio = float(clientAreaWidth) / clientAreaHeight;
+
   nextFrame = frames.getNext(frameCount);
 
   LARGE_INTEGER counterFrequency;
@@ -359,6 +362,7 @@ int WINAPI WinMain(
       nextFrame->input.cursorPosition = getCursorPosition();
       nextFrame->clientAreaWidth = clientAreaWidth;
       nextFrame->clientAreaHeight = clientAreaHeight;
+      nextFrame->aspectRatio = float(clientAreaWidth) / clientAreaHeight;
 
       LARGE_INTEGER currentCounterValue;
       QueryPerformanceCounter(&currentCounterValue);

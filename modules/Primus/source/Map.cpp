@@ -2,6 +2,7 @@
 
 #include "Primus/Primus.hpp"
 
+#include "Core/Math.hpp"
 #include "Core/Image.hpp"
 
 #define MAP_DIRECTORY ASSET_DIRECTORY L"/maps"
@@ -59,7 +60,18 @@ void Heightmap::reset()
   height = 0;
 }
 
-bool Map::tryLoad(const wchar_t* mapName)
+bool Map::tryLoad(const wchar_t* mapName, float verticalFieldOfViewRadians, float aspectRatio)
 {
-  return heightmap.tryLoad(mapName);
+  if (!heightmap.tryLoad(mapName))
+  {
+    return false;
+  }
+
+  cameraZoomMin = 1.f;
+  const float horizontalFieldOfViewRadians = verticalToHorizontalFieldOfView(verticalFieldOfViewRadians, aspectRatio);
+  const float cameraYToFitMapHorizontally = cotan(horizontalFieldOfViewRadians / 2.f) * (widthInMeters / 2.f);
+  const float cameraYToFitMapVertically = cotan(verticalFieldOfViewRadians / 2.f) * (heightInMeters / 2.f);
+  cameraZoomMax = min(cameraYToFitMapHorizontally, cameraYToFitMapVertically);
+
+  return true;
 }

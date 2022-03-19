@@ -374,19 +374,19 @@ void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)
   }
 }
 
-bool D3D11Renderer::tryLoadMap(const Map& map)
+static bool tryInitializeHeightmap(const Map& map)
 {
   const D3D11_TEXTURE2D_DESC heightmapTextureDescription = {
-    map.heightmap.width,
-    map.heightmap.height,
-    1,
-    1,
-    DXGI_FORMAT_R16_SNORM,
-    {1, 0},
-    D3D11_USAGE_IMMUTABLE,
-    D3D11_BIND_SHADER_RESOURCE,
-    0,
-    0
+  map.heightmap.width,
+  map.heightmap.height,
+  1,
+  1,
+  DXGI_FORMAT_R16_SNORM,
+  {1, 0},
+  D3D11_USAGE_IMMUTABLE,
+  D3D11_BIND_SHADER_RESOURCE,
+  0,
+  0
   };
 
   D3D11_SUBRESOURCE_DATA heightmapTextureData;
@@ -418,6 +418,16 @@ bool D3D11Renderer::tryLoadMap(const Map& map)
   if (FAILED(device->CreateSamplerState(&heightmapSamplerDescription, &heightmapSampler)))
   {
     logError("Failed to create heightmap texture sampler.");
+    return false;
+  }
+
+  return true;
+}
+
+bool D3D11Renderer::tryLoadMap(const Map& map)
+{
+  if (!tryInitializeHeightmap(map))
+  {
     return false;
   }
 
@@ -482,7 +492,7 @@ static void drawDebugText(const Frame& frameState)
   #endif
 }
 
-static void renderTerrain(const Frame& frame)
+static void renderTerrain(const Frame& frame, const Map& map)
 {
   context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   context->IASetInputLayout(FullScreenInputLayout);
@@ -495,16 +505,16 @@ static void renderTerrain(const Frame& frame)
 
   D3D11_MAPPED_SUBRESOURCE mappedConstantBuffer;
   context->Map(terrainConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedConstantBuffer);
-  const Mat4f transform = Mat4x3f::scale(10.f, 1.f, 10.f) * frame.camera.viewProjection;
+  const Mat4f transform = Mat4x3f::scale(static_cast<float>(map.widthInMeters), 1.f, static_cast<float>(map.heightInMeters)) * frame.camera.viewProjection;
   memcpy(mappedConstantBuffer.pData, &transform, sizeof(transform));
   context->Unmap(terrainConstantBuffer, 0);
 
   context->DrawIndexed(arrayLength(terrainIndexBufferIndices), 0, 0);
 }
 
-static void render3D(const Frame& frameState)
+static void render3D(const Frame& frameState, const Map& map)
 {
-  renderTerrain(frameState);
+  renderTerrain(frameState, map);
 
   resolveRenderTargetIntoBackBuffer();
 }
@@ -518,7 +528,7 @@ static void render2D(const Frame& frameState)
   d2Context->EndDraw();
 }
 
-void D3D11Renderer::render(const Frame& frameState)
+void D3D11Renderer::render(const Frame& frameState, const Map& map)
 {
   
 #ifdef DAR_DEBUG
@@ -535,7 +545,7 @@ void D3D11Renderer::render(const Frame& frameState)
   context->ClearRenderTargetView(renderTargetView, clearColor);
   context->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-  render3D(frameState);
+  render3D(frameState, map);
 
   render2D(frameState);
 

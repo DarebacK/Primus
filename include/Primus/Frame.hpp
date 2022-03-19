@@ -15,4 +15,5 @@ struct Frame
 
   int clientAreaWidth;
   int clientAreaHeight;
+  float aspectRatio;
 };

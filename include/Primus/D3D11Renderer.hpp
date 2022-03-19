@@ -21,5 +21,5 @@ public:
 
   bool tryLoadMap(const Map& map);
 
-  void render(const Frame& frameState);
+  void render(const Frame& frameState, const Map& map);
 };

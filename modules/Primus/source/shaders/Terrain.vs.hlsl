@@ -5,26 +5,15 @@ cbuffer Transformation
 	float4x4 transform;
 };
 
-static float2 positions[] =
-{
-	float2( 0.f,  0.f),
-	float2( 0.f,  1.f),
-	float2( 1.f,  1.f),
-	float2( 1.f,  0.f),
-};
-
-static float2 uvs[] =
-{
-	float2(0.f,  1.f),
-	float2(0.f,  0.f),
-	float2(1.f,  0.f),
-	float2(1.f,  1.f),
-};
+static const uint heightmapWidth = 2560;
+static const uint heightmapHeight = 3072;
 
 struct Input
 {
 	uint vertexIndex : SV_VertexID;
 };
+
+Texture2D heightmap;
 
 struct Output
 {
@@ -34,9 +23,14 @@ struct Output
 
 Output vertexShaderMain(Input input)
 {
-	const float2 positionInWorld = positions[input.vertexIndex];
+	const uint x = input.vertexIndex % heightmapHeight;
+	const uint y = input.vertexIndex / heightmapWidth;
+
+	//min16int height = heightmap.Load(int3(x, y, 0));
+
 	Output output;
-	output.position = mul(float4(positionInWorld.x, 0.f, positionInWorld.y, 1.f), transform);
-	output.uv = uvs[input.vertexIndex];
+	output.uv.x = x / float(heightmapWidth - 1);
+	output.uv.y = y / float(heightmapHeight - 1);
+	output.position = mul(float4(output.uv.x, 0.f, 1.f - output.uv.y, 1.f), transform);
 	return output;
 }

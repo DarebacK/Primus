@@ -181,12 +181,6 @@ namespace
 
 static void initializeTerrain()
 {
-  if (FAILED(device->CreateBuffer(&terrainIndexBufferDescription, &terrainIndexBufferData, &terrainIndexBuffer)))
-  {
-    logError("Failed to create terrain index buffer.");
-    return;
-  }
-
   if (FAILED(device->CreateBuffer(&terrainConstantBufferDescription, nullptr, &terrainConstantBuffer)))
   {
     logError("Failed to create terrain constant buffer.");
@@ -381,7 +375,7 @@ static bool tryInitializeHeightmap(const Map& map)
   map.heightmap.height,
   1,
   1,
-  DXGI_FORMAT_R16_SNORM,
+  DXGI_FORMAT_R16_SINT,
   {1, 0},
   D3D11_USAGE_IMMUTABLE,
   D3D11_BIND_SHADER_RESOURCE,
@@ -418,6 +412,56 @@ static bool tryInitializeHeightmap(const Map& map)
   if (FAILED(device->CreateSamplerState(&heightmapSamplerDescription, &heightmapSampler)))
   {
     logError("Failed to create heightmap texture sampler.");
+    return false;
+  }
+
+  //const_cast<Map&>(map).heightmap.width = 3;
+  //const_cast<Map&>(map).heightmap.height = 3;
+
+  const uint32 indexCountPerRow = uint32(map.heightmap.width * 2);
+  const uint32 rowCount = map.heightmap.height - 1;
+  const uint32 degenerateIndexCount = (rowCount - 1) * 2; // row 0 doesn't need degenerate indices. 
+  terrainIndexBufferLength = indexCountPerRow * rowCount + degenerateIndexCount;
+
+  std::vector<uint32> indices;
+  indices.resize(terrainIndexBufferLength);
+  taskScheduler.parallelFor(0, rowCount - 1, [&heightmap = map.heightmap, indicesData = indices.data()](int64 i) {
+    const uint32 rowIndex = heightmap.height - 2 - i; // Start from bottom for clockwise winding order.
+    const uint32 baseUpVertexIndex = rowIndex * heightmap.width;
+    const uint32 baseDownVertexIndex = (rowIndex + 1) * heightmap.width;
+    const uint32 indexCountPerRow = uint32(heightmap.width * 2 + 2);
+    uint32* indexBufferWriteIterator = indicesData + i * indexCountPerRow;
+    for (int32 x = 0; x < heightmap.width; x++)
+    {
+      *(indexBufferWriteIterator++) = baseDownVertexIndex + x;
+      *(indexBufferWriteIterator++) = baseUpVertexIndex + x;
+    }
+
+    // Degenerate indices to prevent face winding swap.
+    *(indexBufferWriteIterator++) = baseUpVertexIndex + (heightmap.width - 1);
+    *(indexBufferWriteIterator) = baseUpVertexIndex;
+  });
+  // top most row
+  const uint32 baseUpVertexIndex = 0;
+  const uint32 baseDownVertexIndex = map.heightmap.width;
+  uint32* indexBufferWriteIterator = indices.data() + (rowCount - 1) * (indexCountPerRow + 2);
+  for (int32 x = 0; x < map.heightmap.width; x++)
+  {
+    *(indexBufferWriteIterator++) = baseDownVertexIndex + x;
+    *(indexBufferWriteIterator++) = baseUpVertexIndex + x;
+  }
+
+  D3D11_BUFFER_DESC terrainIndexBufferDescription{
+    terrainIndexBufferLength * sizeof(uint32),
+    D3D11_USAGE_IMMUTABLE,
+    D3D11_BIND_INDEX_BUFFER
+  };
+
+  D3D11_SUBRESOURCE_DATA terrainIndexBufferData{ indices.data(), 0, 0 };
+
+  if (FAILED(device->CreateBuffer(&terrainIndexBufferDescription, &terrainIndexBufferData, &terrainIndexBuffer)))
+  {
+    logError("Failed to create terrain index buffer.");
     return false;
   }
 
@@ -494,14 +538,14 @@ static void drawDebugText(const Frame& frameState)
 
 static void renderTerrain(const Frame& frame, const Map& map)
 {
-  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
   context->IASetInputLayout(FullScreenInputLayout);
-  context->IASetIndexBuffer(terrainIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+  context->IASetIndexBuffer(terrainIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
   context->VSSetShader(TerrainVertexShader, nullptr, 0);
   context->VSSetConstantBuffers(0, 1, &terrainConstantBuffer.p);
+  context->VSSetShaderResources(0, 1, &heightmapTextureView.p);
   context->PSSetShader(TerrainPixelShader, nullptr, 0);
-  context->PSSetShaderResources(0, 1, &heightmapTextureView.p);
-  context->PSSetSamplers(0, 1, &heightmapSampler.p);
+  //context->PSSetSamplers(0, 1, &heightmapSampler.p);
 
   D3D11_MAPPED_SUBRESOURCE mappedConstantBuffer;
   context->Map(terrainConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedConstantBuffer);
@@ -509,7 +553,7 @@ static void renderTerrain(const Frame& frame, const Map& map)
   memcpy(mappedConstantBuffer.pData, &transform, sizeof(transform));
   context->Unmap(terrainConstantBuffer, 0);
 
-  context->DrawIndexed(arrayLength(terrainIndexBufferIndices), 0, 0);
+  context->DrawIndexed(terrainIndexBufferLength, 0, 0);
 }
 
 static void render3D(const Frame& frameState, const Map& map)

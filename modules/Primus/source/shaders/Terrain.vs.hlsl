@@ -19,7 +19,7 @@ struct Output
 {
 	float4 position : SV_POSITION;
 	float2 uv : TEXCOORD0;
-	min16int height : HEIGHT;
+	float height : HEIGHT;
 };
 
 Output vertexShaderMain(Input input)
@@ -34,6 +34,6 @@ Output vertexShaderMain(Input input)
 	output.uv.y = y / float(heightmapHeight - 1);
 	const float4 positionWorld = float4(output.uv.x, height, 1.f - output.uv.y, 1.f);
 	output.position = mul(positionWorld, transform);
-	output.height = height;
+	output.height = float(height);
 	return output;
 }

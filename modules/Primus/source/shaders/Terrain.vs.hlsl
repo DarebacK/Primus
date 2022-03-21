@@ -13,24 +13,27 @@ struct Input
 	uint vertexIndex : SV_VertexID;
 };
 
-Texture2D heightmap;
+Texture2D<min16int> heightmap;
 
 struct Output
 {
 	float4 position : SV_POSITION;
 	float2 uv : TEXCOORD0;
+	min16int height : HEIGHT;
 };
 
 Output vertexShaderMain(Input input)
 {
-	const uint x = input.vertexIndex % heightmapHeight;
+	const uint x = input.vertexIndex % heightmapWidth;
 	const uint y = input.vertexIndex / heightmapWidth;
 
-	//min16int height = heightmap.Load(int3(x, y, 0));
+	min16int height = heightmap.Load(int3(x, y, 0));
 
 	Output output;
 	output.uv.x = x / float(heightmapWidth - 1);
 	output.uv.y = y / float(heightmapHeight - 1);
-	output.position = mul(float4(output.uv.x, 0.f, 1.f - output.uv.y, 1.f), transform);
+	const float4 positionWorld = float4(output.uv.x, height, 1.f - output.uv.y, 1.f);
+	output.position = mul(positionWorld, transform);
+	output.height = height;
 	return output;
 }

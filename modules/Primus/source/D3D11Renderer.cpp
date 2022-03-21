@@ -415,9 +415,6 @@ static bool tryInitializeHeightmap(const Map& map)
     return false;
   }
 
-  //const_cast<Map&>(map).heightmap.width = 3;
-  //const_cast<Map&>(map).heightmap.height = 3;
-
   const uint32 indexCountPerRow = uint32(map.heightmap.width * 2);
   const uint32 rowCount = map.heightmap.height - 1;
   const uint32 degenerateIndexCount = (rowCount - 1) * 2; // row 0 doesn't need degenerate indices. 

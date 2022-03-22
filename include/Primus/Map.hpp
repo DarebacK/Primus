@@ -32,7 +32,7 @@ struct Map
 {
   Heightmap heightmap;
   int64 widthInMeters = 1565430; // TODO: read these values from map.ini. Maybe using libconfini?
-  int64 heightInMeters = 1252344;
+  int64 heightInMeters = 1878516;
 
   float cameraZoomMin;
   float cameraZoomMax;

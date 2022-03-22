@@ -8,6 +8,8 @@ cbuffer Transformation
 static const uint heightmapWidth = 2560;
 static const uint heightmapHeight = 3072;
 
+static const float visualHeightMultiplier = 5.f;
+
 struct Input
 {
 	uint vertexIndex : SV_VertexID;
@@ -32,7 +34,7 @@ Output vertexShaderMain(Input input)
 	Output output;
 	output.uv.x = x / float(heightmapWidth - 1);
 	output.uv.y = y / float(heightmapHeight - 1);
-	const float4 positionWorld = float4(output.uv.x, max(height, 0.f), 1.f - output.uv.y, 1.f);
+	const float4 positionWorld = float4(output.uv.x, max(visualHeightMultiplier * height, 0.f), 1.f - output.uv.y, 1.f);
 	output.position = mul(positionWorld, transform);
 	output.height = float(height);
 	return output;

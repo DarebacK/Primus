@@ -30,7 +30,7 @@ namespace
   DXGI_ADAPTER_DESC2 dxgiAdapterDesc{};
   CComPtr<IDXGISwapChain1> swapChain = nullptr;
   DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
-  constexpr UINT msaaSampleCount = 8;
+  constexpr UINT msaaSampleCount = 1; // TODO: Is set to 1 because higher numbers cause artifacts in terrain. Resolve this.
   CComPtr<ID3D11Texture2D> renderTarget = nullptr;
   CD3D11_TEXTURE2D_DESC renderTargetDesc = {};
   CComPtr<ID3D11RenderTargetView> renderTargetView = nullptr;

@@ -7,18 +7,20 @@
 #include <fstream>
 
 namespace {
-  constexpr int tileSize = 512;
+  constexpr int tileSize = 256;
   #define TILE_ZOOM 10
 
-  constexpr int64 tileXMin = 547;
-  constexpr int64 tileXMax = 547;
+  constexpr int64 tileXMin = 555;
+  constexpr int64 tileXMax = 556;
   constexpr int64 widthInTiles = tileXMax - tileXMin + 1;
   constexpr int64 widthInPixels = widthInTiles * tileSize;
-  constexpr int64 tileYMin = 380;
-  constexpr int64 tileYMax = 380;
+  constexpr size_t writePitch = widthInPixels * 3;
+  constexpr int64 tileYMin = 394;
+  constexpr int64 tileYMax = 395;
   constexpr int64 heightInTiles = tileYMax - tileYMin + 1;
   constexpr int64 heightInPixels = tileSize * heightInTiles;
   constexpr int64 tileCount = widthInTiles * heightInTiles;
+  constexpr size_t bytesPerPixel = 3;
 
   // https://api.maptiler.com/tiles/satellite-mediumres/{z}/{x}/{y}.jpg?key=jv0AKvuMCw6M6sWGYF8M
   const wchar_t* serverUrl = L"api.maptiler.com";
@@ -30,8 +32,18 @@ void downloadColormap(HINTERNET internet, const char* outputFilePath)
 {
   HttpDownloader downloader{ internet, serverUrl };
 
-  std::vector<uint16> colormap;
-  colormap.resize(tileCount * tileSize * tileSize * 2);
+  Image colormap;
+  colormap.data = static_cast<byte*>(malloc(tileCount * tileSize * tileSize * bytesPerPixel));
+  if (!colormap.data)
+  {
+    logError("Failed to allocate memory for to be downloaded color map.");
+    return;
+  }
+  colormap.width = widthInPixels;
+  colormap.height = heightInPixels;
+  colormap.pixelFormat = PixelFormat::RGB;
+
+  JpegReader jpegReader;
 
   std::vector<byte> contentBuffer;
   for (int32 tileY = tileYMin; tileY <= tileYMax; tileY++)
@@ -47,14 +59,30 @@ void downloadColormap(HINTERNET internet, const char* outputFilePath)
 
       printf("Downloading %S\n", url);
 
-      downloader.tryDownloadImage(url, contentBuffer);
+      if (!downloader.tryDownloadImage(url, contentBuffer))
+      {
+        logError("Failed to download color map image tile %d %d %ls", tileX, tileY, WSTRINGIFY_DEFINE(TILE_ZOOM));
+        return;
+      }
+
+      Image tileImage = jpegReader.read(contentBuffer.data(), contentBuffer.size(), colormap.pixelFormat);
+      if (!tileImage.data)
+      {
+        logError("Failed to read downloaded color map image tile %d %d %ls", tileX, tileY, WSTRINGIFY_DEFINE(TILE_ZOOM));
+        return;
+      }
+
+      colormap.chromaSubsampling = tileImage.chromaSubsampling;
+
+      const size_t writeOffset = tileYIndex * tileSize * writePitch + tileXIndex * tileSize * bytesPerPixel;
+      const size_t readPitch = tileImage.width * bytesPerPixel;
+      for (int64 y = 0; y < tileImage.height; ++y)
+      {
+        memcpy(colormap.data + writeOffset + y * writePitch, tileImage.data + y * readPitch, tileImage.width * bytesPerPixel);
+      }
     }
   }
 
-  FILE* file;
-  if (fopen_s(&file, "colormap.jpg", "wb") == 0)
-  {
-    fwrite(contentBuffer.data(), contentBuffer.size(), 1, file);
-    fclose(file);
-  }
+  JpegWriter jpegWriter;
+  jpegWriter.tryWrite(colormap, 100, "colormap.jpg"); // This creates bigger file than the original. If this is an issue, dive deeper into the jpeg compression.
 }

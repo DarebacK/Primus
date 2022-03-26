@@ -12,14 +12,14 @@
 
 int main(int argc, char* argv[])
 {
-  InternetHandle internet = InternetOpen(L"Primus MapTool", INTERNET_OPEN_TYPE_DIRECT, nullptr, nullptr, 0);
+  InternetHandle internet{ InternetOpen(L"Primus MapTool", INTERNET_OPEN_TYPE_DIRECT, nullptr, nullptr, 0) };
   if (!internet)
   {
     logError("InternetOpen failed.");
     return 1;
   }
 
-  downloadHeightmap(internet, "heightmap.png");
+  downloadHeightmap(internet.get(), "heightmap.png");
 
   return 0;
 }

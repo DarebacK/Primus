@@ -4,18 +4,25 @@
 
 #include <WinInet.h>
 
-class InternetHandle
+#include <vector>
+#include <memory>
+
+struct InternetHandleDeleter {
+  void operator()(HINTERNET handle) { InternetCloseHandle(handle); }
+};
+using InternetHandle = std::unique_ptr<void, InternetHandleDeleter>;
+
+class HttpDownloader
 {
 public:
-  InternetHandle(HINTERNET inHandle) : handle(inHandle) {}
-  InternetHandle(InternetHandle& other) = delete;
-  InternetHandle(InternetHandle&& other) = delete;
-  ~InternetHandle() { InternetCloseHandle(handle); }
 
-  operator HINTERNET() { return handle; }
+  HttpDownloader(HINTERNET internet, const wchar_t* server);
+
+  bool tryDownloadImage(const wchar_t* url, std::vector<byte>& buffer);
 
 private:
-  HINTERNET handle;
+  
+  InternetHandle serverConnection;
 };
 
 static DWORD queryRequestNumber(HINTERNET request, DWORD infoLevel)

@@ -35,6 +35,7 @@ void downloadHeightmap(HINTERNET internet, const char* outputFilePath)
   std::vector<uint16> heightmap;
   heightmap.resize(tileCount * TILE_SIZE * TILE_SIZE * 2);
 
+  std::vector<byte> contentBuffer;
   uint16 minElevation = std::numeric_limits<uint16>::max();
   uint16 maxElevation = 0;
   for (int32 tileY = tileYMin; tileY <= tileYMax; tileY++)
@@ -45,13 +46,12 @@ void downloadHeightmap(HINTERNET internet, const char* outputFilePath)
     {
       const int64 tileXIndex = tileX - tileXMin;
 
-      wchar_t requestObjectName[128];
-      swprintf_s(requestObjectName, L"%ls/%d/%d%ls", requestUrlBegin, tileX, tileY, requestUrlEnd);
+      wchar_t url[128];
+      swprintf_s(url, L"%ls/%d/%d%ls", requestUrlBegin, tileX, tileY, requestUrlEnd);
 
-      printf("Downloading %S\n", requestObjectName);
+      printf("Downloading %S\n", url);
 
-      std::vector<byte> contentBuffer;
-      downloader.tryDownloadImage(requestObjectName, contentBuffer);
+      downloader.tryDownloadImage(url, contentBuffer);
 
       PngReadResult pngResult = readPng(contentBuffer.data(), int64(contentBuffer.size()));
       if (!pngResult.data)

@@ -7,7 +7,7 @@ HttpDownloader::HttpDownloader(HINTERNET internet, const wchar_t* server)
 
 bool HttpDownloader::tryDownloadImage(const wchar_t* url, std::vector<byte>& buffer)
 {
-  const wchar_t* acceptTypes[] = { L"image/png", NULL };
+  const wchar_t* acceptTypes[] = { L"image/png", L"image/jpeg", NULL};
   constexpr DWORD httpRequestFlags = INTERNET_FLAG_KEEP_CONNECTION | INTERNET_FLAG_CACHE_IF_NET_FAIL | INTERNET_FLAG_SECURE;
 
   InternetHandle httpRequest{ HttpOpenRequest(serverConnection.get(), L"GET", url, nullptr, nullptr, acceptTypes, httpRequestFlags, NULL) };

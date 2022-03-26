@@ -9,6 +9,7 @@
 
 #include "Internet.hpp"
 #include "Heightmap.hpp"
+#include "Colormap.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -19,7 +20,8 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  downloadHeightmap(internet.get(), "heightmap.png");
+  //downloadHeightmap(internet.get(), "heightmap.png");
+  downloadColormap(internet.get(), "colormap.png");
 
   return 0;
 }

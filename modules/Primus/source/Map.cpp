@@ -71,12 +71,12 @@ bool Map::tryLoad(const wchar_t* mapName, float verticalFieldOfViewRadians, floa
   const float horizontalFieldOfViewRadians = verticalToHorizontalFieldOfView(verticalFieldOfViewRadians, aspectRatio);
   const float cameraYToFitMapHorizontally = cotan(horizontalFieldOfViewRadians / 2.f) * (widthInMeters / 2.f);
   const float cameraYToFitMapVertically = cotan(verticalFieldOfViewRadians / 2.f) * (heightInMeters / 2.f);
-  cameraZoomMax = min(cameraYToFitMapHorizontally, cameraYToFitMapVertically);
+  cameraZoomMax = std::min(cameraYToFitMapHorizontally, cameraYToFitMapVertically);
 
   cameraNearPlane = 1.f;
   const float distanceToMaxZoomedOutHorizontalEdge = cameraZoomMax / cos(horizontalFieldOfViewRadians / 2.f);
   const float distanceToMaxZoomedOutVerticalEdge = cameraZoomMax / cos(verticalFieldOfViewRadians / 2.f);
-  cameraFarPlane = max(distanceToMaxZoomedOutHorizontalEdge, distanceToMaxZoomedOutVerticalEdge); // TODO: adjust far clipping plane distance according to min elevation + current zoom level.
+  cameraFarPlane = std::max(distanceToMaxZoomedOutHorizontalEdge, distanceToMaxZoomedOutVerticalEdge); // TODO: adjust far clipping plane distance according to min elevation + current zoom level.
 
   return true;
 }

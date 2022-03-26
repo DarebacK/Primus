@@ -1,9 +1,8 @@
 #define NOMINMAX
 
-#include "Core/Core.hpp"
-#include "Core/Image.hpp"
+#include "Heightmap.hpp"
 
-#include <WinInet.h>
+#include "Core/Image.hpp"
 
 #include <vector>
 #include <memory>
@@ -13,7 +12,7 @@
 #define TILE_ZOOM 7
 
 constexpr int64 tileXMin = 66;
-constexpr int64 tileXMax = 70; 
+constexpr int64 tileXMax = 70;
 constexpr int64 widthInTiles = tileXMax - tileXMin + 1;
 constexpr int64 widthInPixels = widthInTiles * TILE_SIZE;
 constexpr int64 tileYMin = 45;
@@ -29,48 +28,13 @@ const wchar_t* requestObjectNameEnd = L".png?api_key=XeM2Tf-mRS6G1orxmShMzg";
 
 constexpr uint16 elevationOffset = 11000; // Used to convert below sea elevations to unsigned int range. 11000 because deepest point is ~10935 meters.
 
-class InternetHandle
+void downloadHeightmap(HINTERNET internet, const char* outputFilePath)
 {
-public:
-  InternetHandle(HINTERNET inHandle) : handle(inHandle) {}
-  InternetHandle(InternetHandle& other) = delete;
-  InternetHandle(InternetHandle&& other) = delete;
-  ~InternetHandle() { InternetCloseHandle(handle); }
-
-  operator HINTERNET() { return handle; }
-
-private:
-  HINTERNET handle;
-};
-
-static DWORD queryRequestNumber(HINTERNET request, DWORD infoLevel)
-{
-  byte queryBuffer[32] = {};
-  DWORD queryBufferLength = static_cast<DWORD>(sizeof(queryBuffer));
-  DWORD headerIndex = 0;
-  if (!HttpQueryInfo(request, infoLevel | HTTP_QUERY_FLAG_NUMBER, queryBuffer, &queryBufferLength, &headerIndex))
-  {
-    logError("HttpQueryInfo failed.");
-    return 0;
-  }
-
-  return *reinterpret_cast<DWORD*>(queryBuffer);
-}
-
-int main(int argc, char* argv[])
-{
-  InternetHandle internet = InternetOpen(L"Primus MapTool", INTERNET_OPEN_TYPE_DIRECT, nullptr, nullptr, 0);
-  if (!internet)
-  {
-    logError("InternetOpen failed.");
-    return 1;
-  }
-
   InternetHandle connect = InternetConnect(internet, server, INTERNET_DEFAULT_HTTPS_PORT, nullptr, nullptr, INTERNET_SERVICE_HTTP, 0, NULL);
   if (!connect)
   {
     logError("InternetConnect failed.");
-    return 2;
+    return;
   }
 
   std::vector<uint16> heightmap;
@@ -92,31 +56,33 @@ int main(int argc, char* argv[])
       wchar_t requestObjectName[128];
       swprintf_s(requestObjectName, L"%ls/%d/%d%ls", requestObjectNameBegin, tileX, tileY, requestObjectNameEnd);
 
+      printf("Downloading %S\n", requestObjectName);
+
       InternetHandle httpRequest = HttpOpenRequest(connect, L"GET", requestObjectName, nullptr, nullptr, acceptTypes, httpRequestFlags, NULL);
       if (!httpRequest)
       {
         logError("HttpOpenRequest failed.");
-        return 3;
+        return;
       }
 
       if (!HttpSendRequest(httpRequest, nullptr, 0, nullptr, 0))
       {
         logError("HttpSendRequest failed.");
-        return 4;
+        return;
       }
 
       DWORD statusCode = queryRequestNumber(httpRequest, HTTP_QUERY_STATUS_CODE);
       if (statusCode != 200)
       {
         logError("Http request failed. Status code %lu.", statusCode);
-        return 5;
+        return;
       }
 
       DWORD contentLength = queryRequestNumber(httpRequest, HTTP_QUERY_CONTENT_LENGTH);
       if (contentLength == 0)
       {
         logError("Failed to get http request content length");
-        return 6;
+        return;
       }
 
       std::vector<byte> contentBuffer;
@@ -130,7 +96,7 @@ int main(int argc, char* argv[])
           if (contentBufferWriteOffset != contentLength)
           {
             logError("InternetReadFile failed.");
-            return 7;
+            return;
           }
           else
           {
@@ -150,13 +116,13 @@ int main(int argc, char* argv[])
       if (!pngResult.data)
       {
         logError("Failed to read PNG data.");
-        return 8;
+        return;
       }
 
       if (pngResult.channelCount != 4) // For some reason the terarrium image file has alpha channel despite it not containing any information.
       {
         logError("PNG data has wrong channel count %lld", pngResult.channelCount);
-        return 9;
+        return;
       }
 
       const byte* readDataIterator = pngResult.data;
@@ -190,16 +156,13 @@ int main(int argc, char* argv[])
     const float multiplier = std::numeric_limits<uint16>::max() / float(maxElevation - minElevation);
     for (uint16& pixel : heightmap)
     {
-      pixel = (pixel - minElevation) * multiplier;
-      pixel = nativeToBigEndian(pixel);
+      pixel = nativeToBigEndian(uint16((pixel - minElevation) * multiplier));
     }
   }
 
-  if (!writePngGrayscaleBigEndian("heightmap.png", reinterpret_cast<byte*>(heightmap.data()), widthInPixels, heightInPixels, 1, 16))
+  if (!writePngGrayscaleBigEndian(outputFilePath, reinterpret_cast<byte*>(heightmap.data()), widthInPixels, heightInPixels, 1, 16))
   {
     logError("Failed to write png data.");
-    return 10;
+    return;
   }
-
-  return 0;
 }

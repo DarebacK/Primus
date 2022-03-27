@@ -37,7 +37,7 @@ bool Heightmap::tryLoad(const wchar_t* mapName)
   width = image.width;
   height = image.height;
 
-  taskScheduler.parallelFor(0, image.height, [this](int64 i) {
+  taskScheduler.parallelFor(0, image.height, [this](int64 i, int64 threadIndex) {
     uint16* const grayscaleDataRow = reinterpret_cast<uint16*>(data) + i * width;
     int16* const elevationDataRow = reinterpret_cast<int16*>(grayscaleDataRow);
     for (int64 x = 0; x < width; x++)

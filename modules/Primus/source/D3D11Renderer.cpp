@@ -422,7 +422,7 @@ static bool tryInitializeHeightmap(const Map& map)
 
   std::vector<uint32> indices;
   indices.resize(terrainIndexBufferLength);
-  taskScheduler.parallelFor(0, rowCount - 1, [&heightmap = map.heightmap, indicesData = indices.data()](int64 i) {
+  taskScheduler.parallelFor(0, rowCount - 1, [&heightmap = map.heightmap, indicesData = indices.data()](int64 i, int64 threadIndex) {
     const uint32 rowIndex = heightmap.height - 2 - i; // Start from bottom for clockwise winding order.
     const uint32 baseUpVertexIndex = rowIndex * heightmap.width;
     const uint32 baseDownVertexIndex = (rowIndex + 1) * heightmap.width;

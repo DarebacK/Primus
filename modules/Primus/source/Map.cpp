@@ -5,19 +5,19 @@
 #include "Core/Math.hpp"
 #include "Core/Image.hpp"
 
-#define MAP_DIRECTORY ASSET_DIRECTORY L"/maps"
+#define MAPS_DIRECTORY ASSET_DIRECTORY L"/maps"
 
 Heightmap::~Heightmap()
 {
   reset();
 }
 
-bool Heightmap::tryLoad(const wchar_t* mapName)
+bool Heightmap::tryLoad(const wchar_t* mapDirectory)
 {
   reset();
 
   wchar_t mapFilePath[128];
-  swprintf_s(mapFilePath, L"%ls/%ls/heightmap.png", MAP_DIRECTORY, mapName);
+  swprintf_s(mapFilePath, L"%lsheightmap.png", mapDirectory);
 
   PngReadResult image = readPng(mapFilePath);
   if (!image.data || !image.width || !image.height)
@@ -62,7 +62,11 @@ void Heightmap::reset()
 
 bool Map::tryLoad(const wchar_t* mapName, float verticalFieldOfViewRadians, float aspectRatio)
 {
-  if (!heightmap.tryLoad(mapName))
+  wcscpy_s(name, mapName);
+
+  swprintf_s(directoryPath, L"%ls/%ls/", MAPS_DIRECTORY, mapName);
+
+  if (!heightmap.tryLoad(directoryPath))
   {
     return false;
   }

@@ -30,9 +30,13 @@ private:
 // Holds data with lifetime of a map
 struct Map
 {
-  Heightmap heightmap;
+  wchar_t name[64];
+  wchar_t directoryPath[128];
+
   int64 widthInMeters = 1565430; // TODO: read these values from map.ini. Maybe using libconfini?
   int64 heightInMeters = 1878516;
+
+  Heightmap heightmap;
 
   float cameraZoomMin;
   float cameraZoomMax;

@@ -7,6 +7,9 @@ struct Input
 	float height : HEIGHT;
 };
 
+Texture2D colormap;
+SamplerState colormapSampler;
+
 static const float4 deepestWaterColor = { 0.f, 0.f, 0.f, 1.f };
 static const float4 shallowestWaterColor = { 0.12549019607f, 0.2862745098f, 0.29019607843f, 1.f };
 static const float deepestWaterHeight = -11000.f;
@@ -16,6 +19,6 @@ float4 pixelShaderMain(Input input) : SV_TARGET
 {
 	const float t = step(0.f, input.height);
 	const float4 waterColor = lerp(deepestWaterColor, shallowestWaterColor, smoothstep(deepestWaterHeight, shallowestWaterHeight, input.height));
-	const float4 landColor = float4(input.uv.x, input.uv.y, 0.f, 1.0f);
+	const float4 landColor = colormap.Sample(colormapSampler, input.uv); /*float4(input.uv.x, input.uv.y, 0.f, 1.0f)*/;
 	return lerp(waterColor, landColor, t);
 }

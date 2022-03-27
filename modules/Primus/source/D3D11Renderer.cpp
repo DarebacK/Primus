@@ -54,8 +54,12 @@ namespace
   CComPtr<ID2D1Device1> d2Device = nullptr;
   CComPtr<ID2D1DeviceContext1> d2Context = nullptr;
 
-  CComPtr<ID3D11SamplerState> heightmapSampler;
-  const D3D11_SAMPLER_DESC heightmapSamplerDescription = {
+  CComPtr<ID3D11ShaderResourceView> heightmapTextureView;
+  CComPtr<ID3D11Texture2D> heightmapTexture;
+  CComPtr<ID3D11ShaderResourceView> colormapTextureView;
+  CComPtr<ID3D11Texture2D> colormapTexture;
+  CComPtr<ID3D11SamplerState> colormapSampler;
+  constexpr D3D11_SAMPLER_DESC colormapSamplerDescription = {
     D3D11_FILTER_MIN_MAG_MIP_LINEAR,
     D3D11_TEXTURE_ADDRESS_CLAMP,
     D3D11_TEXTURE_ADDRESS_CLAMP,
@@ -67,8 +71,6 @@ namespace
     0,
     0
   };
-  CComPtr<ID3D11ShaderResourceView> heightmapTextureView;
-  CComPtr<ID3D11Texture2D> heightmapTexture;
 
 #ifdef DAR_DEBUG
   CComPtr<ID3D11Debug> debug = nullptr;
@@ -408,13 +410,6 @@ static bool tryInitializeHeightmap(const Map& map)
     return false;
   }
 
-  heightmapSampler.Release();
-  if (FAILED(device->CreateSamplerState(&heightmapSamplerDescription, &heightmapSampler)))
-  {
-    logError("Failed to create heightmap texture sampler.");
-    return false;
-  }
-
   const uint32 indexCountPerRow = uint32(map.heightmap.width * 2);
   const uint32 rowCount = map.heightmap.height - 1;
   const uint32 degenerateIndexCount = (rowCount - 1) * 2; // row 0 doesn't need degenerate indices. 
@@ -465,9 +460,80 @@ static bool tryInitializeHeightmap(const Map& map)
   return true;
 }
 
+static bool tryInitializeColormap(const Map& map)
+{
+  wchar_t filePath[256];
+  wsprintfW(filePath, L"%lscolormap.jpg", map.directoryPath);
+
+  std::vector<byte> colormapJpeg;
+  if (!tryReadEntireFile(filePath, colormapJpeg))
+  {
+    return false;
+  }
+
+  JpegReader jpegReader;
+  Image colormapRgba = jpegReader.read(colormapJpeg.data(), colormapJpeg.size(), PixelFormat::RGBA);
+  if (!colormapRgba.data)
+  {
+    return false;
+  }
+
+  // TODO: compression?
+  // TODO: mips?
+  const D3D11_TEXTURE2D_DESC colormapTextureDescription = {
+    colormapRgba.width,
+    colormapRgba.height,
+    1,
+    1,
+    DXGI_FORMAT_R8G8B8A8_UNORM, // TODO: SRGB?
+    {1, 0},
+    D3D11_USAGE_IMMUTABLE,
+    D3D11_BIND_SHADER_RESOURCE,
+    0,
+    0
+  };
+
+  D3D11_SUBRESOURCE_DATA colormapTextureData;
+  colormapTextureData.pSysMem = colormapRgba.data;
+  colormapTextureData.SysMemPitch = colormapRgba.width * 4;
+  colormapTextureData.SysMemSlicePitch = 0;
+
+  colormapTexture.Release();
+  if (FAILED(device->CreateTexture2D(&colormapTextureDescription, &colormapTextureData, &colormapTexture)))
+  {
+    logError("Failed to create colormap texture.");
+    return false;
+  }
+
+  D3D11_SHADER_RESOURCE_VIEW_DESC colormapShaderResourceViewDescription;
+  colormapShaderResourceViewDescription.Format = colormapTextureDescription.Format;
+  colormapShaderResourceViewDescription.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+  colormapShaderResourceViewDescription.Texture2D.MostDetailedMip = 0;
+  colormapShaderResourceViewDescription.Texture2D.MipLevels = 1;
+
+  colormapTextureView.Release();
+  if (FAILED(device->CreateShaderResourceView(colormapTexture, &colormapShaderResourceViewDescription, &colormapTextureView)))
+  {
+    logError("Failed to create heightmap shader resource view.");
+    return false;
+  }
+
+  colormapSampler.Release();
+  if (FAILED(device->CreateSamplerState(&colormapSamplerDescription, &colormapSampler)))
+  {
+    logError("Failed to create heightmap texture sampler.");
+    return false;
+  }
+}
+
 bool D3D11Renderer::tryLoadMap(const Map& map)
 {
   if (!tryInitializeHeightmap(map))
+  {
+    return false;
+  }
+
+  if (!tryInitializeColormap(map))
   {
     return false;
   }
@@ -538,11 +604,14 @@ static void renderTerrain(const Frame& frame, const Map& map)
   context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
   context->IASetInputLayout(FullScreenInputLayout);
   context->IASetIndexBuffer(terrainIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
   context->VSSetShader(TerrainVertexShader, nullptr, 0);
   context->VSSetConstantBuffers(0, 1, &terrainConstantBuffer.p);
   context->VSSetShaderResources(0, 1, &heightmapTextureView.p);
+
   context->PSSetShader(TerrainPixelShader, nullptr, 0);
-  //context->PSSetSamplers(0, 1, &heightmapSampler.p);
+  context->PSSetShaderResources(0, 1, &colormapTextureView.p);
+  context->PSSetSamplers(0, 1, &colormapSampler.p);
 
   D3D11_MAPPED_SUBRESOURCE mappedConstantBuffer;
   context->Map(terrainConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedConstantBuffer);

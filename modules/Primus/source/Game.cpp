@@ -3,7 +3,8 @@
 #include "Primus/Map.hpp"
 
 static constexpr float verticalFieldOfViewRadians = degreesToRadians(74.f);
-static constexpr float cameraSpeed = 0.1f;
+static constexpr float cameraMoveSpeed = 0.03f;
+static constexpr float cameraZoomSpeed = 0.1f;
 
 Map currentMap;
 
@@ -33,16 +34,16 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   // i.e. how many meters/units it is from camera center to the intersection of it's frustum with the map plane.
   float cameraEdgeVerticalOffsetFromPosition = tan(verticalFieldOfViewRadians / 2.f) * nextFrame.camera.position.y;
 
-  const float currentCameraSpeed = cameraSpeed * cameraEdgeVerticalOffsetFromPosition;
-  nextFrame.camera.position.x += currentCameraSpeed * nextFrame.input.keyboard.d.pressedDown - currentCameraSpeed * nextFrame.input.keyboard.a.pressedDown;
-  nextFrame.camera.position.z += currentCameraSpeed * nextFrame.input.keyboard.w.pressedDown - currentCameraSpeed * nextFrame.input.keyboard.s.pressedDown;
+  const float currentCameraSpeed = cameraMoveSpeed * cameraEdgeVerticalOffsetFromPosition;
+  nextFrame.camera.position.x += currentCameraSpeed * nextFrame.input.keyboard.d.isDown - currentCameraSpeed * nextFrame.input.keyboard.a.isDown;
+  nextFrame.camera.position.z += currentCameraSpeed * nextFrame.input.keyboard.w.isDown - currentCameraSpeed * nextFrame.input.keyboard.s.isDown;
 
   if (nextFrame.input.mouse.dWheel > 0.f)
   {
     for (float i = 0.f; i < nextFrame.input.mouse.dWheel; ++i)
     {
       cameraEdgeVerticalOffsetFromPosition = tan(verticalFieldOfViewRadians / 2.f) * nextFrame.camera.position.y;
-      const float zoomInSpeed = cotan(verticalFieldOfViewRadians / 2.f) * cameraSpeed * cameraEdgeVerticalOffsetFromPosition;
+      const float zoomInSpeed = cotan(verticalFieldOfViewRadians / 2.f) * cameraZoomSpeed * cameraEdgeVerticalOffsetFromPosition;
       nextFrame.camera.position.y += -zoomInSpeed;
     }
   }
@@ -51,7 +52,7 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
     for (float i = nextFrame.input.mouse.dWheel; i < 0.f; ++i)
     {
       cameraEdgeVerticalOffsetFromPosition = tan(verticalFieldOfViewRadians / 2.f) * nextFrame.camera.position.y;
-      const float zoomOutSpeed = cotan(verticalFieldOfViewRadians / 2.f) * ((1.f / (1.f - cameraSpeed)) - 1.f) * cameraEdgeVerticalOffsetFromPosition;
+      const float zoomOutSpeed = cotan(verticalFieldOfViewRadians / 2.f) * ((1.f / (1.f - cameraZoomSpeed)) - 1.f) * cameraEdgeVerticalOffsetFromPosition;
       nextFrame.camera.position.y += zoomOutSpeed;
     }
   }

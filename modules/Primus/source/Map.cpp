@@ -34,8 +34,8 @@ bool Heightmap::tryLoad(const wchar_t* mapDirectory)
 
   data = reinterpret_cast<int16*>(image.data);
   image.data = nullptr;
-  width = image.width;
-  height = image.height;
+  width = int32(image.width);
+  height = int32(image.height);
 
   taskScheduler.parallelFor(0, image.height, [this](int64 i, int64 threadIndex) {
     uint16* const grayscaleDataRow = reinterpret_cast<uint16*>(data) + i * width;

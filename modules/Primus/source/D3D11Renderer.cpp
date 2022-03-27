@@ -524,6 +524,8 @@ static bool tryInitializeColormap(const Map& map)
     logError("Failed to create heightmap texture sampler.");
     return false;
   }
+
+  return true;
 }
 
 bool D3D11Renderer::tryLoadMap(const Map& map)

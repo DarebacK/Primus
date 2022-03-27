@@ -53,149 +53,24 @@ namespace
     LPARAM lParam
   )
   {
-    LRESULT result = 0;
     switch (message) {
-    case WM_SIZE: {
-      int newClientAreaWidth = LOWORD(lParam);
-      int newClientAreaHeight = HIWORD(lParam);
-
-    }
-                break;
-    case WM_DESTROY:
-      PostQuitMessage(0);
-      break;
-    case WM_LBUTTONDOWN:
-      nextFrame->input.mouse.left.pressedDown = true;
-      nextFrame->input.mouse.left.isDown = true;
-      break;
-    case WM_LBUTTONUP:
-      nextFrame->input.mouse.left.pressedUp = true;
-      nextFrame->input.mouse.left.isDown = false;
-      break;
-    case WM_MBUTTONDOWN:
-      nextFrame->input.mouse.middle.pressedDown = true;
-      nextFrame->input.mouse.middle.isDown = true;
-      break;
-    case WM_MBUTTONUP:
-      nextFrame->input.mouse.middle.pressedUp = true;
-      nextFrame->input.mouse.middle.isDown = false;
-      break;
-    case WM_RBUTTONDOWN:
-      nextFrame->input.mouse.right.pressedDown = true;
-      nextFrame->input.mouse.right.isDown = true;
-      break;
-    case WM_RBUTTONUP:
-      nextFrame->input.mouse.right.pressedUp = true;
-      nextFrame->input.mouse.right.isDown = false;
-      break;
-    case WM_MOUSEWHEEL:
-      nextFrame->input.mouse.dWheel += (float)GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-      break;
-    case WM_KEYDOWN:
-      switch (wParam) {
-      case VK_ESCAPE:
-        PostQuitMessage(0);
-        break;
-      case VK_F1:
-        nextFrame->input.keyboard.F1.pressedDown = true;
-        break;
-      case VK_F5:
-        nextFrame->input.keyboard.F5.pressedDown = true;
-        break;
-      case VK_MENU:
-        nextFrame->input.keyboard.rightAlt.pressedDown = true;
-        break;
-      case VK_RETURN:
-        nextFrame->input.keyboard.enter.pressedDown = true;
-        break;
-      case VK_LEFT:
-        nextFrame->input.keyboard.left.pressedDown = true;
-        break;
-      case VK_UP:
-        nextFrame->input.keyboard.up.pressedDown = true;
-        break;
-      case VK_RIGHT:
-        nextFrame->input.keyboard.right.pressedDown = true;
-        break;
-      case VK_DOWN:
-        nextFrame->input.keyboard.down.pressedDown = true;
-        break;
-      case VK_SPACE:
-        nextFrame->input.keyboard.space.pressedDown = true;
-        break;
-      case VK_Q:
-        nextFrame->input.keyboard.q.pressedDown = true;
-        break;
-      case VK_W:
-        nextFrame->input.keyboard.w.pressedDown = true;
-        break;
-      case VK_E:
-        nextFrame->input.keyboard.e.pressedDown = true;
-        break;
-      case VK_A:
-        nextFrame->input.keyboard.a.pressedDown = true;
-        break;
-      case VK_S:
-        nextFrame->input.keyboard.s.pressedDown = true;
-        break;
-      case VK_D:
-        nextFrame->input.keyboard.d.pressedDown = true;
-        break;
+      case WM_SIZE: {
+        int newClientAreaWidth = LOWORD(lParam);
+        int newClientAreaHeight = HIWORD(lParam);
+        return 0;
       }
-      break;
-    case WM_KEYUP:
-      switch (wParam) {
-      case VK_F1:
-        nextFrame->input.keyboard.F1.pressedUp = true;
-        break;
-      case VK_F5:
-        nextFrame->input.keyboard.F5.pressedUp = true;
-        break;
-      case VK_MENU:
-        nextFrame->input.keyboard.rightAlt.pressedUp = true;
-        break;
-      case VK_RETURN:
-        nextFrame->input.keyboard.enter.pressedUp = true;
-        break;
-      case VK_LEFT:
-        nextFrame->input.keyboard.left.pressedUp = true;
-        break;
-      case VK_UP:
-        nextFrame->input.keyboard.up.pressedUp = true;
-        break;
-      case VK_RIGHT:
-        nextFrame->input.keyboard.right.pressedUp = true;
-        break;
-      case VK_DOWN:
-        nextFrame->input.keyboard.down.pressedUp = true;
-        break;
-      case VK_SPACE:
-        nextFrame->input.keyboard.space.pressedUp = true;
-        break;
-      case VK_Q:
-        nextFrame->input.keyboard.q.pressedUp = true;
-        break;
-      case VK_W:
-        nextFrame->input.keyboard.w.pressedUp = true;
-        break;
-      case VK_E:
-        nextFrame->input.keyboard.e.pressedUp = true;
-        break;
-      case VK_A:
-        nextFrame->input.keyboard.a.pressedUp = true;
-        break;
-      case VK_S:
-        nextFrame->input.keyboard.s.pressedUp = true;
-        break;
-      case VK_D:
-        nextFrame->input.keyboard.d.pressedUp = true;
-        break;
+      default:
+      {
+        if (nextFrame->input.processMessage(windowHandle, message, wParam, lParam))
+        {
+          return 0;
+        }
+        else
+        {
+          return DefWindowProc(windowHandle, message, wParam, lParam);
+        }
       }
-    default:
-      result = DefWindowProc(windowHandle, message, wParam, lParam);
-      break;
     }
-    return result;
   }
 }
 
@@ -386,8 +261,9 @@ int WINAPI WinMain(
       lastFrame = frames.getLast(frameCount);
       nextFrame = frames.getNext(frameCount);
       nextFrame->input = lastFrame->input;
-      nextFrame->input.keyboard = {};
-      nextFrame->input.mouse.dWheel = 0.f;
+      nextFrame->input.resetForNextFrame();
+      /*nextFrame->input.keyboard = {};
+      nextFrame->input.mouse.dWheel = 0.f;*/
     }
   }
   return 0;

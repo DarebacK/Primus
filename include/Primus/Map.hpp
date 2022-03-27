@@ -17,6 +17,9 @@ public:
   int32 width = 0;
   int32 height = 0;
 
+  int16 minElevation = 0;
+  int16 maxElevation = 0;
+
   bool tryLoad(const wchar_t* mapName);
 
   int64 getDataSize() const { return width * height * 2; }

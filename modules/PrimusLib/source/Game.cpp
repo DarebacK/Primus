@@ -88,7 +88,12 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
     }
   }
 
-  nextFrame.camera.view = Mat4x3f::lookTo(nextFrame.camera.position, Vec3f{ 0.f, -1.f, 0.f }, Vec3f{ 0.f, 0.f, 1.f });
+  const float cameraZoom = nextFrame.camera.position.y; // TODO: this isn't true anymore as angled camera zoom doesn't equal to y.
+  const float cameraAngleInDegrees = lerp(-35.f, 0, cameraZoom / (currentMap.cameraZoomMax - currentMap.cameraZoomMin));
+  const Mat3f cameraRotation = Mat3f::rotationX(degreesToRadians(cameraAngleInDegrees));
+  const Vec3f cameraDirection = Vec3f{ 0.f, -1.f, 0.f } * cameraRotation;
+  const Vec3f cameraUpVector = Vec3f{ 0.f, 0.f, 1.f} * cameraRotation;
+  nextFrame.camera.view = Mat4x3f::lookTo(nextFrame.camera.position, cameraDirection, cameraUpVector);
   nextFrame.camera.projection = Mat4f::perspectiveProjectionD3d(verticalFieldOfViewRadians, nextFrame.aspectRatio, currentMap.cameraNearPlane, currentMap.cameraFarPlane);
   nextFrame.camera.viewProjection = nextFrame.camera.view * nextFrame.camera.projection;
 

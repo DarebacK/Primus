@@ -90,14 +90,13 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
     }
   }
 
-  // TODO: Resolve z fighting issue by 1) Reducing far plane distance based on zoom 2) Use kilometers instead of meters as units.
-
   const Vec3f remainingDistance = nextFrame.camera.endPosition - nextFrame.camera.currentPosition;
   Vec3f frameDelta = 10 * nextFrame.deltaTime * remainingDistance;
   nextFrame.camera.currentPosition += frameDelta;
 
   const float cameraZoom = nextFrame.camera.currentPosition.y; // TODO: this isn't true anymore as angled camera zoom doesn't equal to y.
-  const float cameraAngleInDegrees = lerp(-35.f, 0, cameraZoom / (currentMap.cameraZoomMax - currentMap.cameraZoomMin));
+  const float cameraAngleInDegrees = lerp(-35.f, 0.f, (cameraZoom - currentMap.cameraZoomMin) / (currentMap.cameraZoomMax - currentMap.cameraZoomMin));
+  logVariable(cameraAngleInDegrees, "%f");
   const Mat3f cameraRotation = Mat3f::rotationX(degreesToRadians(cameraAngleInDegrees));
   const Vec3f cameraDirection = Vec3f{ 0.f, -1.f, 0.f } * cameraRotation;
   const Vec3f cameraUpVector = Vec3f{ 0.f, 0.f, 1.f} * cameraRotation;

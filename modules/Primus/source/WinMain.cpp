@@ -2,14 +2,12 @@
 
 #include <stdio.h>
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <windowsx.h>
-#include <Psapi.h>
-
 #include "Core/Core.hpp"
 #include "Core/Math.hpp"
 #include "Core/Task.hpp"
+
+#include <windowsx.h>
+#include <Psapi.h>
 
 #include "Primus/Game.hpp"
 #include "Primus/D3D11Renderer.hpp"

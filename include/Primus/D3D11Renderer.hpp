@@ -1,6 +1,5 @@
 #pragma once
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include "Core/Core.hpp"
 
 #include "Primus/Frame.hpp"
 #include "Primus/Map.hpp"

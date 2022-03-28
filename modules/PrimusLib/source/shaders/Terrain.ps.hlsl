@@ -4,7 +4,7 @@ struct Input
 {
 	float4 position : SV_POSITION;
 	float2 uv : TEXCOORD0;
-	float height : HEIGHT;
+	float heightInMeters : HEIGHT;
 };
 
 Texture2D colormap;
@@ -17,8 +17,8 @@ static const float shallowestWaterHeight = 0.f;
 
 float4 pixelShaderMain(Input input) : SV_TARGET
 {
-	const float t = step(0.f, input.height);
-	const float4 waterColor = lerp(deepestWaterColor, shallowestWaterColor, smoothstep(deepestWaterHeight, shallowestWaterHeight, input.height));
+	const float t = step(0.f, input.heightInMeters);
+	const float4 waterColor = lerp(deepestWaterColor, shallowestWaterColor, smoothstep(deepestWaterHeight, shallowestWaterHeight, input.heightInMeters));
 	const float4 landColor = colormap.Sample(colormapSampler, input.uv); /*float4(input.uv.x, input.uv.y, 0.f, 1.0f)*/;
 	return lerp(waterColor, landColor, t);
 }

@@ -17,8 +17,10 @@ public:
   int32 width = 0;
   int32 height = 0;
 
-  int16 minElevation = 0;
-  int16 maxElevation = 0;
+  int16 minElevationInM = 0;
+  int16 maxElevationInM = 0;
+  float minElevationInKm = 0.f;
+  float maxElevationInKm = 0.f;
 
   bool tryLoad(const wchar_t* mapName);
 
@@ -36,8 +38,10 @@ struct Map
   wchar_t name[64];
   wchar_t directoryPath[128];
 
-  int64 widthInMeters = 1565430; // TODO: read these values from map.ini. Maybe using libconfini?
-  int64 heightInMeters = 1878516;
+  int64 widthInM = 1565430; // TODO: read these values from map.ini. Maybe using libconfini?
+  int64 heightInM = 1878516;
+  float widthInKm = 1565.430f;
+  float heightInKm = 1878.516f;
 
   Heightmap heightmap;
 

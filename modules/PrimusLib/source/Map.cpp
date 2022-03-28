@@ -72,8 +72,10 @@ bool Heightmap::tryLoad(const wchar_t* mapDirectory)
     }
   });
 
-  minElevation = atomicMinElevation.load(std::memory_order_relaxed);
-  maxElevation = atomicMaxElevation.load(std::memory_order_relaxed);
+  minElevationInM = atomicMinElevation.load(std::memory_order_relaxed);
+  maxElevationInM = atomicMaxElevation.load(std::memory_order_relaxed);
+  minElevationInKm = minElevationInM / 1000.f;
+  maxElevationInKm = maxElevationInM / 1000.f;
 
   return true;
 }
@@ -102,10 +104,10 @@ bool Map::tryLoad(const wchar_t* mapName, float verticalFieldOfViewRadians, floa
 
   cameraNearPlane = 1.f;
 
-  cameraZoomMin = (heightmap.maxElevation * 5.f) + cameraNearPlane; // TODO: * 5.f due to visual height multiplier. Put it in a map constant buffer and share it with the terrain vertex shader.
+  cameraZoomMin = (heightmap.maxElevationInKm * 5.f) + cameraNearPlane; // TODO: * 5.f due to visual height multiplier. Put it in a map constant buffer and share it with the terrain vertex shader.
   const float horizontalFieldOfViewRadians = verticalToHorizontalFieldOfView(verticalFieldOfViewRadians, aspectRatio);
-  const float cameraYToFitMapHorizontally = cotan(horizontalFieldOfViewRadians / 2.f) * (widthInMeters / 2.f);
-  const float cameraYToFitMapVertically = cotan(verticalFieldOfViewRadians / 2.f) * (heightInMeters / 2.f);
+  const float cameraYToFitMapHorizontally = cotan(horizontalFieldOfViewRadians / 2.f) * (widthInKm / 2.f);
+  const float cameraYToFitMapVertically = cotan(verticalFieldOfViewRadians / 2.f) * (heightInKm / 2.f);
   cameraZoomMax = std::min(cameraYToFitMapHorizontally, cameraYToFitMapVertically);
 
   const float distanceToMaxZoomedOutHorizontalEdge = cameraZoomMax / cos(horizontalFieldOfViewRadians / 2.f);

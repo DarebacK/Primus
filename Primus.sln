@@ -6,7 +6,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Core", "..\DarEngine\module
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "D3D11", "..\DarEngine\modules\D3D11\D3D11.vcxproj", "{CF093D3B-6E7B-4224-969E-112B92E8BB12}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MapTool", "modules\MapTool\MapTool.vcxproj", "{5934BAFB-1072-4A07-ABC1-66F603999561}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrimusEditor", "modules\PrimusEditor\PrimusEditor.vcxproj", "{5934BAFB-1072-4A07-ABC1-66F603999561}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Primus", "modules\Primus\Primus.vcxproj", "{1D032455-4252-447B-9403-FCD19E1577F4}"
 EndProject

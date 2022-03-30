@@ -5,6 +5,7 @@
 #include "Core/Core.hpp"
 #include "Core/Math.hpp"
 #include "Core/Task.hpp"
+#include "Core/WindowsPlatform.h"
 
 #include <windowsx.h>
 #include <Psapi.h>
@@ -34,7 +35,7 @@ namespace
 
   int clientAreaWidth = GetSystemMetrics(SM_CXSCREEN);
   int clientAreaHeight = GetSystemMetrics(SM_CYSCREEN);
-  HWND window = nullptr;
+  MainWindow window;
   HANDLE process = nullptr;
   WINDOWPLACEMENT windowPosition = { sizeof(windowPosition) };
   const TCHAR* gameName = L"Primus";
@@ -115,23 +116,6 @@ static void debugShowResourcesUsage()
 #endif
 }
 
-static void showErrorMessageBox(const wchar_t* text, const wchar_t* caption)
-{
-  MessageBox(window, text, caption, MB_OK | MB_ICONERROR);
-}
-
-static Vec2i getCursorPosition()
-{
-  Vec2i mousePosition;
-  if (!GetCursorPos((LPPOINT)&mousePosition)) {
-    return {};
-  }
-  if (!ScreenToClient(window, (LPPOINT)&mousePosition)) {
-    return {};
-  }
-  return mousePosition;
-}
-
 int WINAPI WinMain(
   HINSTANCE instanceHandle,
   HINSTANCE hPrevInstance, // always zero
@@ -145,40 +129,7 @@ int WINAPI WinMain(
   GetSystemInfo(&systemInfo);
   coreCount = systemInfo.dwNumberOfProcessors;
 
-  WNDCLASS windowClass{};
-  windowClass.lpfnWndProc = &WindowProc;
-  windowClass.hInstance = instanceHandle;
-  windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-  windowClass.lpszClassName = L"Game window class";
-  if (!RegisterClass(&windowClass)) {
-    showErrorMessageBox(L"Failed to register window class.", L"Fatal error");
-    return -1;
-  }
-
-  RECT windowRectangle = { 0, 0, clientAreaWidth, clientAreaHeight };
-  constexpr DWORD windowStyle = WS_POPUP;
-  constexpr DWORD windowStyleEx = 0;
-  AdjustWindowRectEx(&windowRectangle, windowStyle, false, windowStyleEx);
-  const int windowWidth = windowRectangle.right - windowRectangle.left;
-  const int windowHeight = windowRectangle.bottom - windowRectangle.top;
-  window = CreateWindowEx(
-    windowStyleEx,
-    windowClass.lpszClassName,
-    gameName,
-    windowStyle,
-    CW_USEDEFAULT,
-    CW_USEDEFAULT,
-    windowWidth,
-    windowHeight,
-    nullptr,
-    nullptr,
-    windowClass.hInstance,
-    nullptr
-  );
-  if (!window) {
-    showErrorMessageBox(L"Failed to create game window", L"Fatal error");
-    return -1;
-  }
+  window.tryInitialize(instanceHandle, gameName, &WindowProc);
 
   if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST))
   {
@@ -194,7 +145,7 @@ int WINAPI WinMain(
 
   D3D11Renderer renderer;
   if (!renderer.tryInitialize(window)) {
-    showErrorMessageBox(L"Failed to initialize Direct3D11 renderer", L"Fatal error");
+    window.showErrorMessageBox(L"Failed to initialize Direct3D11 renderer", L"Fatal error");
     return -1;
   }
 
@@ -202,37 +153,37 @@ int WINAPI WinMain(
 
   Game game;
 
-  ShowWindow(window, SW_SHOWNORMAL);
+  window.show();
 
   lastFrame = frames.getLast(frameCount);
-  lastFrame->input.cursorPosition = getCursorPosition();
+  lastFrame->input.cursorPosition = window.getCursorPosition();
   lastFrame->clientAreaWidth = clientAreaWidth;
   lastFrame->clientAreaHeight = clientAreaHeight;
   lastFrame->aspectRatio = float(clientAreaWidth) / clientAreaHeight;
 
   nextFrame = frames.getNext(frameCount);
 
+  if (!game.tryInitialize(*lastFrame, renderer))
+  {
+    window.showErrorMessageBox(L"Failed to initialize game.", L"Fatal error");
+    return -1;
+  }
+
   LARGE_INTEGER counterFrequency;
   QueryPerformanceFrequency(&counterFrequency);
   LARGE_INTEGER lastCounterValue;
   QueryPerformanceCounter(&lastCounterValue);
 
-  if (!game.tryInitialize(*lastFrame, renderer))
-  {
-    showErrorMessageBox(L"Failed to initialize game.", L"Fatal error");
-    return -1;
-  }
-
   MSG message{};
   while (message.message != WM_QUIT) {
-    if (PeekMessageA(&message, nullptr, 0, 0, PM_REMOVE)) {
+    if (PeekMessage(&message, nullptr, 0, 0, PM_REMOVE)) {
       TranslateMessage(&message);
-      DispatchMessageA(&message);
+      DispatchMessage(&message);
     }
     else {
       // process frame
 
-      nextFrame->input.cursorPosition = getCursorPosition();
+      nextFrame->input.cursorPosition = window.getCursorPosition();
       nextFrame->clientAreaWidth = clientAreaWidth;
       nextFrame->clientAreaHeight = clientAreaHeight;
       nextFrame->aspectRatio = float(clientAreaWidth) / clientAreaHeight;
@@ -260,8 +211,6 @@ int WINAPI WinMain(
       nextFrame = frames.getNext(frameCount);
       nextFrame->input = lastFrame->input;
       nextFrame->input.resetForNextFrame();
-      /*nextFrame->input.keyboard = {};
-      nextFrame->input.mouse.dWheel = 0.f;*/
     }
   }
   return 0;

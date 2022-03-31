@@ -79,12 +79,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)</OutDir>
+    <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)build\intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)</OutDir>
+    <OutDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)build\intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -160,6 +160,15 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\DarEngine\modules\Core\Core.vcxproj">
       <Project>{11435bca-afc5-4c10-8260-a55637caa4b6}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\DarEngine\modules\D3D11\D3D11.vcxproj">
+      <Project>{cf093d3b-6e7b-4224-969e-112b92e8bb12}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\DarEngine\modules\ImGui\ImGui.vcxproj">
+      <Project>{b9252282-f2e0-430c-a9dd-54a4edb353f3}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\PrimusLib\PrimusLib.vcxproj">
+      <Project>{4d5b45a6-922e-465d-916c-d61f5c75c7bb}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

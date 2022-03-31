@@ -104,5 +104,7 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   nextFrame.camera.projection = Mat4f::perspectiveProjectionD3d(verticalFieldOfViewRadians, nextFrame.aspectRatio, currentMap.cameraNearPlane, currentMap.cameraFarPlane);
   nextFrame.camera.viewProjection = nextFrame.camera.view * nextFrame.camera.projection;
 
+  renderer.beginRender();
   renderer.render(nextFrame, currentMap);
+  renderer.endRender();
 }

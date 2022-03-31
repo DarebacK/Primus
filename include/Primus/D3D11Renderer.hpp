@@ -15,10 +15,16 @@ public:
   ~D3D11Renderer() = default;
 
   bool tryInitialize(HWND window);
-
   void onWindowResize(int clientAreaWidth, int clientAreaHeight);
-
   bool tryLoadMap(const Map& map);
 
+  void beginRender();
+
+  void setMainRenderTarget();
+
   void render(const Frame& frameState, const Map& map);
+
+  void setBackBufferRenderTarget();
+
+  void endRender();
 };

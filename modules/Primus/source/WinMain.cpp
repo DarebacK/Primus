@@ -169,49 +169,31 @@ int WINAPI WinMain(
     return -1;
   }
 
-  LARGE_INTEGER counterFrequency;
-  QueryPerformanceFrequency(&counterFrequency);
-  LARGE_INTEGER lastCounterValue;
-  QueryPerformanceCounter(&lastCounterValue);
+  runGameLoop([&](int64 frameIndex, float timeDelta) {
+    nextFrame->input.cursorPosition = window.getCursorPosition();
+    nextFrame->clientAreaWidth = clientAreaWidth;
+    nextFrame->clientAreaHeight = clientAreaHeight;
+    nextFrame->aspectRatio = float(clientAreaWidth) / clientAreaHeight;
 
-  MSG message{};
-  while (message.message != WM_QUIT) {
-    if (PeekMessage(&message, nullptr, 0, 0, PM_REMOVE)) {
-      TranslateMessage(&message);
-      DispatchMessage(&message);
+    nextFrame->deltaTime = timeDelta;
+
+    debugResetText();
+    debugText(L"%.3f s / %d fps", nextFrame->deltaTime, (int)(1.f / nextFrame->deltaTime));
+    debugShowResourcesUsage();
+
+    game.update(*lastFrame, *nextFrame, renderer);
+
+    if (lastFrame->clientAreaWidth != clientAreaWidth || lastFrame->clientAreaHeight != clientAreaHeight) {
+      renderer.onWindowResize(clientAreaWidth, clientAreaHeight);
     }
-    else {
-      // process frame
 
-      nextFrame->input.cursorPosition = window.getCursorPosition();
-      nextFrame->clientAreaWidth = clientAreaWidth;
-      nextFrame->clientAreaHeight = clientAreaHeight;
-      nextFrame->aspectRatio = float(clientAreaWidth) / clientAreaHeight;
+    //audio.update(*nextFrameState);
 
-      LARGE_INTEGER currentCounterValue;
-      QueryPerformanceCounter(&currentCounterValue);
-      nextFrame->deltaTime = (float)(currentCounterValue.QuadPart - lastCounterValue.QuadPart) / counterFrequency.QuadPart;
-      lastCounterValue = currentCounterValue;
+    lastFrame = frames.getLast(frameIndex);
+    nextFrame = frames.getNext(frameIndex);
+    nextFrame->input = lastFrame->input;
+    nextFrame->input.resetForNextFrame();
+  });
 
-      debugResetText();
-      debugText(L"%.3f s / %d fps", nextFrame->deltaTime, (int)(1.f / nextFrame->deltaTime));
-      debugShowResourcesUsage();
-
-      game.update(*lastFrame, *nextFrame, renderer);
-
-      if (lastFrame->clientAreaWidth != clientAreaWidth || lastFrame->clientAreaHeight != clientAreaHeight) {
-          renderer.onWindowResize(clientAreaWidth, clientAreaHeight);
-      }
-
-      //audio.update(*nextFrameState);
-
-      ++frameCount;
-
-      lastFrame = frames.getLast(frameCount);
-      nextFrame = frames.getNext(frameCount);
-      nextFrame->input = lastFrame->input;
-      nextFrame->input.resetForNextFrame();
-    }
-  }
   return 0;
 }

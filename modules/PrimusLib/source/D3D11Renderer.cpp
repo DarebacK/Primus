@@ -30,11 +30,12 @@ namespace
   DXGI_ADAPTER_DESC2 dxgiAdapterDesc{};
   CComPtr<IDXGISwapChain1> swapChain = nullptr;
   DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+  CComPtr<ID3D11RenderTargetView> backBufferRenderTargetView = nullptr;
   constexpr UINT msaaSampleCount = 1; // TODO: Is set to 1 because higher numbers cause artifacts in terrain. Resolve this.
   CComPtr<ID3D11Texture2D> renderTarget = nullptr;
   CD3D11_TEXTURE2D_DESC renderTargetDesc = {};
-  CComPtr<ID3D11RenderTargetView> renderTargetView = nullptr;
-  CComPtr<ID3D11DepthStencilView> depthStencilView = nullptr;
+  CComPtr<ID3D11RenderTargetView> mainRenderTargetView = nullptr;
+  CComPtr<ID3D11DepthStencilView> mainDepthStencilView = nullptr;
   float clearColor[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
   CComPtr<ID3D11RasterizerState> rasterizerState = nullptr;
   D3D11_RASTERIZER_DESC rasterizerDesc =
@@ -242,6 +243,16 @@ bool D3D11Renderer::tryInitialize(HWND window)
           }
         }
         swapChain->GetDesc1(&swapChainDesc);
+
+        CComPtr<ID3D11Texture2D> backBuffer = nullptr;
+        if (FAILED(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)))) {
+          logError("Failed to create back buffer render target view.");
+        }
+        else
+        {
+          backBufferRenderTargetView = createRenderTargetView(backBuffer, swapChainDesc.Format);
+        }
+
         if (FAILED(dxgiFactory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER))) {
           logError("Failed to make window association to ignore alt enter.");
         }
@@ -290,17 +301,17 @@ bool D3D11Renderer::tryInitialize(HWND window)
     return false;
   }
 
-  renderTargetView = createRenderTargetView(renderTarget, renderTargetDesc.Format);
-  if (!renderTargetView) {
+  mainRenderTargetView = createRenderTargetView(renderTarget, renderTargetDesc.Format);
+  if (!mainRenderTargetView) {
     logError("Failed to initialize render target view.");
     return false;
   }
-  depthStencilView = createDepthStencilView();
-  if (!depthStencilView) {
+  mainDepthStencilView = createDepthStencilView();
+  if (!mainDepthStencilView) {
     logError("Failed to initialize depth stencil view.");
     return false;
   }
-  context->OMSetRenderTargets(1, &renderTargetView.p, depthStencilView);
+  context->OMSetRenderTargets(1, &mainRenderTargetView.p, mainDepthStencilView);
 
   updateViewport();
 
@@ -328,8 +339,8 @@ void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)
 {
   if (swapChain) {
     d2Context->SetTarget(nullptr);  // Clears the binding to swapChain's back buffer.
-    depthStencilView.Release();
-    renderTargetView.Release();
+    mainDepthStencilView.Release();
+    mainRenderTargetView.Release();
     renderTarget.Release();
     if (FAILED(swapChain->ResizeBuffers(0, 0, 0, swapChainDesc.Format, swapChainDesc.Flags))) {
 #ifdef DAR_DEBUG
@@ -349,17 +360,17 @@ void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)
       return;
     }
 
-    renderTargetView = createRenderTargetView(renderTarget, renderTargetDesc.Format);
-    if (!renderTargetView) {
+    mainRenderTargetView = createRenderTargetView(renderTarget, renderTargetDesc.Format);
+    if (!mainRenderTargetView) {
       logError("Failed to create render target view after window resize.");
       return;
     }
-    depthStencilView = createDepthStencilView();
-    if (!depthStencilView) {
+    mainDepthStencilView = createDepthStencilView();
+    if (!mainDepthStencilView) {
       logError("Failed to create depth stencil view after window resize.");
       return;
     }
-    context->OMSetRenderTargets(1, &renderTargetView.p, depthStencilView);
+    context->OMSetRenderTargets(1, &mainRenderTargetView.p, mainDepthStencilView);
 
     if (!bindD2dTargetToD3dTarget()) {
       logError("Failed to bind Direct2D render target to Direct3D render target after window resize.");
@@ -368,6 +379,18 @@ void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)
 
     updateViewport();
   }
+}
+
+void D3D11Renderer::beginRender()
+{
+  context->ClearRenderTargetView(mainRenderTargetView, clearColor);
+  context->ClearRenderTargetView(backBufferRenderTargetView, clearColor);
+  context->ClearDepthStencilView(mainDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+}
+
+void D3D11Renderer::setMainRenderTarget()
+{
+  context->OMSetRenderTargets(1, &mainRenderTargetView.p, mainDepthStencilView);
 }
 
 static bool tryInitializeHeightmap(const Map& map)
@@ -642,7 +665,8 @@ static void render2D(const Frame& frameState)
 
 void D3D11Renderer::render(const Frame& frameState, const Map& map)
 {
-  
+  setMainRenderTarget();
+
 #ifdef DAR_DEBUG
   if (frameState.input.keyboard.F1.pressedDown) {
     switchWireframeState();
@@ -654,13 +678,18 @@ void D3D11Renderer::render(const Frame& frameState, const Map& map)
   displayVideoMemoryInfo();
 #endif
 
-  context->ClearRenderTargetView(renderTargetView, clearColor);
-  context->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
   render3D(frameState, map);
 
   render2D(frameState);
+}
 
+void D3D11Renderer::setBackBufferRenderTarget()
+{
+  context->OMSetRenderTargets(1, &backBufferRenderTargetView.p, nullptr);
+}
+
+void D3D11Renderer::endRender()
+{
   UINT presentFlags = 0;
   swapChain->Present(1, presentFlags);
 }

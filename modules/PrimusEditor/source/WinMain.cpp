@@ -61,6 +61,81 @@ LRESULT CALLBACK WindowProc(
   }
 }
 
+struct DownloadPopup
+{
+  ImGuiID id = 0;
+
+  int tileRangeTopLeft[2] = { 1, 1 };
+  int tileRangeBottomRight[2] = { 1, 1 };
+  int tileRangeZoom = 1;
+  int heightmapZoom = 1;
+  int colormapZoom = 1;
+
+  void open()
+  {
+    ImGui::OpenPopup(id);
+  }
+
+  void define()
+  {
+    if (ImGui::BeginPopupModal("Download", 0, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+      ImGui::InputInt("Zoom", &tileRangeZoom, 1, 2);
+      ImGui::InputInt2("Top left", tileRangeTopLeft);
+      ImGui::InputInt2("Bottom right", tileRangeBottomRight);
+
+      ImGui::Separator();
+
+      ImGui::InputInt("Heightmap zoom", &heightmapZoom, 1, 2);
+      ImGui::InputInt("Colormap zoom", &colormapZoom, 1, 2);
+
+      ImGui::Separator();
+
+      if (ImGui::Button("Download"))
+      {
+        // TODO: download
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Cancel"))
+      {
+        ImGui::CloseCurrentPopup();
+      }
+
+      ImGui::EndPopup();
+    }
+  }
+
+} downloadPopup;
+
+static void defineGui()
+{
+  downloadPopup.id = ImGui::GetID("Download");
+
+  if (ImGui::BeginMainMenuBar())
+  {
+    if (ImGui::BeginMenu("Map"))
+    {
+      if (ImGui::MenuItem("Open"))
+      {
+
+      }
+      if (ImGui::MenuItem("Download"))
+      {
+        downloadPopup.open();
+      }
+
+      ImGui::EndMenu();
+    }
+
+    ImGui::EndMainMenuBar();
+  }
+
+  ImGui::ShowDemoWindow();
+
+  downloadPopup.define();
+}
+
 int WINAPI WinMain(
   HINSTANCE instanceHandle,
   HINSTANCE hPrevInstance, // always zero
@@ -84,20 +159,15 @@ int WINAPI WinMain(
 
   Dar::ImGui imGui{ window, D3D11::device, D3D11::context };  
 
+  ImGuiIO& imGuiIo = ImGui::GetIO();
+  imGuiIo.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\LeelawUI.ttf", 16);
+
   window.show();
 
   runGameLoop([&](int64 frameIndex, float timeDelta) {
     imGui.newFrame();
 
-    if (ImGui::BeginMainMenuBar())
-    {
-      if (ImGui::MenuItem("Map"))
-      {
-
-      }
-
-      ImGui::EndMainMenuBar();
-    }
+    defineGui();
 
     renderer.beginRender();
 

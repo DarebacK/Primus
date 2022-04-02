@@ -43,6 +43,10 @@ LRESULT CALLBACK WindowProc(
       int newClientAreaHeight = HIWORD(lParam);
       return 0;
     }
+    case WM_CLOSE: {
+      PostQuitMessage(0);
+      return DefWindowProc(windowHandle, message, wParam, lParam);
+    }
     default:
     {
       if (input.processMessage(windowHandle, message, wParam, lParam))
@@ -66,11 +70,10 @@ int WINAPI WinMain(
 {
   taskScheduler.initialize();
 
-  if (!window.tryInitialize(instanceHandle, L"PrimusEditor", &WindowProc))
+  if (!window.tryInitializeEditorStyle(instanceHandle, L"PrimusEditor", &WindowProc))
   {
     return -1;
   }
-  window.show();
 
   D3D11Renderer renderer;
   if (!renderer.tryInitialize(window))
@@ -81,14 +84,22 @@ int WINAPI WinMain(
 
   Dar::ImGui imGui{ window, D3D11::device, D3D11::context };  
 
+  window.show();
+
   runGameLoop([&](int64 frameIndex, float timeDelta) {
     imGui.newFrame();
 
-    ImGui::Text("Hello world");
+    if (ImGui::BeginMainMenuBar())
+    {
+      if (ImGui::MenuItem("Map"))
+      {
+
+      }
+
+      ImGui::EndMainMenuBar();
+    }
 
     renderer.beginRender();
-
-    renderer.setMainRenderTarget();
 
     renderer.setBackBufferRenderTarget();
     imGui.render();

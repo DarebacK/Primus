@@ -396,16 +396,16 @@ void D3D11Renderer::setMainRenderTarget()
 static bool tryInitializeHeightmap(const Map& map)
 {
   const D3D11_TEXTURE2D_DESC heightmapTextureDescription = {
-  map.heightmap.width,
-  map.heightmap.height,
-  1,
-  1,
-  DXGI_FORMAT_R16_SINT,
-  {1, 0},
-  D3D11_USAGE_IMMUTABLE,
-  D3D11_BIND_SHADER_RESOURCE,
-  0,
-  0
+    UINT(map.heightmap.width),
+    UINT(map.heightmap.height),
+    1,
+    1,
+    DXGI_FORMAT_R16_SINT,
+    {1, 0},
+    D3D11_USAGE_IMMUTABLE,
+    D3D11_BIND_SHADER_RESOURCE,
+    0,
+    0
   };
 
   D3D11_SUBRESOURCE_DATA heightmapTextureData;
@@ -441,7 +441,7 @@ static bool tryInitializeHeightmap(const Map& map)
   std::vector<uint32> indices;
   indices.resize(terrainIndexBufferLength);
   taskScheduler.parallelFor(0, rowCount - 1, [&heightmap = map.heightmap, indicesData = indices.data()](int64 i, int64 threadIndex) {
-    const uint32 rowIndex = heightmap.height - 2 - i; // Start from bottom for clockwise winding order.
+    const uint32 rowIndex = uint32(heightmap.height - 2 - i); // Start from bottom for clockwise winding order.
     const uint32 baseUpVertexIndex = rowIndex * heightmap.width;
     const uint32 baseDownVertexIndex = (rowIndex + 1) * heightmap.width;
     const uint32 indexCountPerRow = uint32(heightmap.width * 2 + 2);

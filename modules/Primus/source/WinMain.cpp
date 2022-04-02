@@ -129,7 +129,7 @@ int WINAPI WinMain(
   GetSystemInfo(&systemInfo);
   coreCount = systemInfo.dwNumberOfProcessors;
 
-  window.tryInitialize(instanceHandle, gameName, &WindowProc);
+  window.tryInitializeGameStyle(instanceHandle, gameName, &WindowProc);
 
   if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST))
   {

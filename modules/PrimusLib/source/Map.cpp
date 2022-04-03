@@ -5,19 +5,31 @@
 #include "Core/Math.hpp"
 #include "Core/Image.hpp"
 
-#define MAPS_DIRECTORY ASSET_DIRECTORY L"/maps"
+Heightmap::Heightmap(Heightmap&& other) noexcept
+{
+  using std::swap;
+
+  swap(data, other.data);
+  swap(width, other.width);
+  swap(height, other.height);
+
+  swap(minElevationInM, other.minElevationInM);
+  swap(maxElevationInM, other.maxElevationInM);
+  swap(minElevationInKm, other.minElevationInKm);
+  swap(maxElevationInKm, other.maxElevationInKm);
+}
 
 Heightmap::~Heightmap()
 {
   reset();
 }
 
-bool Heightmap::tryLoad(const wchar_t* mapDirectory)
+bool Heightmap::tryLoad(const wchar_t* mapDirectoryPath)
 {
   reset();
 
   wchar_t mapFilePath[128];
-  swprintf_s(mapFilePath, L"%lsheightmap.png", mapDirectory);
+  swprintf_s(mapFilePath, L"%ls\\heightmap.png", mapDirectoryPath);
 
   PngReadResult image = readPng(mapFilePath);
   if (!image.data || !image.width || !image.height)
@@ -91,13 +103,11 @@ void Heightmap::reset()
   height = 0;
 }
 
-bool Map::tryLoad(const wchar_t* mapName, float verticalFieldOfViewRadians, float aspectRatio)
+bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio)
 {
-  wcscpy_s(name, mapName);
+  wcscpy_s(directoryPath, mapDirectoryPath);
 
-  swprintf_s(directoryPath, L"%ls/%ls/", MAPS_DIRECTORY, mapName);
-
-  if (!heightmap.tryLoad(directoryPath))
+  if (!heightmap.tryLoad(mapDirectoryPath))
   {
     return false;
   }

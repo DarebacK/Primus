@@ -10,7 +10,7 @@ public:
 
   Heightmap() = default;
   Heightmap(const Heightmap& other) = delete;
-  Heightmap(const Heightmap&& other) = delete;
+  Heightmap(Heightmap&& other) noexcept;
   ~Heightmap();
 
   int16* data = nullptr; // elevation in meters.
@@ -50,5 +50,5 @@ struct Map
   float cameraNearPlane;
   float cameraFarPlane;
 
-  bool tryLoad(const wchar_t* mapName, float verticalFieldOfViewRadians, float aspectRatio);
+  bool tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio);
 };

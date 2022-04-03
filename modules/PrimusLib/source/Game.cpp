@@ -1,22 +1,28 @@
 #include "Primus/Game.hpp"
 
+#include "Primus/Primus.hpp"
 #include "Primus/Map.hpp"
 
-static constexpr float verticalFieldOfViewRadians = degreesToRadians(74.f);
 static constexpr float cameraMoveSpeed = 0.04f;
 static constexpr float cameraZoomSpeed = 0.12f;
+
+#define MAPS_DIRECTORY ASSET_DIRECTORY L"/maps"
 
 Map currentMap;
 
 bool Game::tryInitialize(Frame& firstFrame, D3D11Renderer& renderer)
 {
-  if (!currentMap.tryLoad(L"italy", verticalFieldOfViewRadians, firstFrame.aspectRatio))
+  wchar_t mapDirectoryPath[256];
+  swprintf_s(mapDirectoryPath, L"%ls/italy", MAPS_DIRECTORY);
+  if (!currentMap.tryLoad(mapDirectoryPath, verticalFieldOfViewRadians, firstFrame.aspectRatio))
   {
+    logError("Failed to load map %ls", mapDirectoryPath);
     return false;
   }
 
   if (!renderer.tryLoadMap(currentMap))
   {
+    logError("Renderer failed to load map %ls", mapDirectoryPath);
     return false;
   }
 
@@ -96,7 +102,6 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
 
   const float cameraZoom = nextFrame.camera.currentPosition.y; // TODO: this isn't true anymore as angled camera zoom doesn't equal to y.
   const float cameraAngleInDegrees = lerp(-35.f, 0.f, (cameraZoom - currentMap.cameraZoomMin) / (currentMap.cameraZoomMax - currentMap.cameraZoomMin));
-  logVariable(cameraAngleInDegrees, "%f");
   const Mat3f cameraRotation = Mat3f::rotationX(degreesToRadians(cameraAngleInDegrees));
   const Vec3f cameraDirection = Vec3f{ 0.f, -1.f, 0.f } * cameraRotation;
   const Vec3f cameraUpVector = Vec3f{ 0.f, 0.f, 1.f} * cameraRotation;

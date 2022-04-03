@@ -9,6 +9,7 @@
 
 #include "ImGui/ImGui.hpp"
 
+#include "Primus/Primus.hpp"
 #include "Primus/D3D11Renderer.hpp"
 
 #include <vector>
@@ -108,6 +109,10 @@ struct DownloadPopup
 
 } downloadPopup;
 
+static std::vector<Map> maps;
+
+static Vec2i viewportSize = { 1920, 1080 }; // TODO: get the true viewport size.
+
 static void defineGui()
 {
   downloadPopup.id = ImGui::GetID("Download");
@@ -118,7 +123,17 @@ static void defineGui()
     {
       if (ImGui::MenuItem("Open"))
       {
+        wchar_t mapFolderPath[MAX_PATH];
+        if (tryChooseFolderDialog(window, L"Choose map folder", mapFolderPath))
+        {
+          Map openedMap;
+          if (!openedMap.tryLoad(mapFolderPath, verticalFieldOfViewRadians, viewportSize.x / float(viewportSize.y)))
+          {
+            logError("Failed to load %ls map.", mapFolderPath);
+          }
 
+          maps.emplace_back(std::move(openedMap));
+        }
       }
       if (ImGui::MenuItem("Download"))
       {

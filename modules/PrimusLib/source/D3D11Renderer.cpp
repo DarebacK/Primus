@@ -486,7 +486,7 @@ static bool tryInitializeHeightmap(const Map& map)
 static bool tryInitializeColormap(const Map& map)
 {
   wchar_t filePath[256];
-  wsprintfW(filePath, L"%lscolormap.jpg", map.directoryPath);
+  wsprintfW(filePath, L"%ls\\colormap.jpg", map.directoryPath);
 
   std::vector<byte> colormapJpeg;
   if (!tryReadEntireFile(filePath, colormapJpeg))

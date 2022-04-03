@@ -131,8 +131,10 @@ static void defineGui()
           {
             logError("Failed to load %ls map.", mapFolderPath);
           }
-
-          maps.emplace_back(std::move(openedMap));
+          else
+          {
+            maps.emplace_back(std::move(openedMap));
+          }
         }
       }
       if (ImGui::MenuItem("Download"))
@@ -165,6 +167,23 @@ static void defineGui()
 
     {
       ImGui::Begin("Maps");
+
+      for (const Map& map : maps)
+      {
+        char mapNameUtf8[1024];
+        if (WideCharToMultiByte(CP_UTF8, 0, map.directoryPath, -1, mapNameUtf8, sizeof(mapNameUtf8), NULL, NULL) == 0)
+        {
+          continue;
+        }
+        if (ImGui::TreeNode(mapNameUtf8))
+        {
+          constexpr ImGuiTreeNodeFlags leafFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+          ImGui::TreeNodeEx((void*)(intptr_t)(map.directoryPath + 1), leafFlags, "heightmap");
+          ImGui::TreeNodeEx((void*)(intptr_t)(map.directoryPath + 2), leafFlags, "colormap");
+
+          ImGui::TreePop();
+        }
+      }
 
       ImGui::End();
     }

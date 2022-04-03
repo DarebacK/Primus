@@ -131,9 +131,53 @@ static void defineGui()
     ImGui::EndMainMenuBar();
   }
 
-  ImGui::ShowDemoWindow();
+  {
+    // DockSpace
+    static constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
 
-  downloadPopup.define();
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("DockSpace", nullptr, window_flags);
+    ImGui::PopStyleVar(3);
+
+    static ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+
+    {
+      ImGui::Begin("Maps");
+
+      ImGui::End();
+    }
+
+    {
+      ImGui::Begin("Viewport");
+
+      ImGui::End();
+    }
+
+    {
+      ImGui::Begin("Inspector");
+
+      ImGui::End();
+    }
+
+    {
+      ImGui::Begin("Log");
+
+      ImGui::End();
+    }
+
+    ImGui::ShowDemoWindow();
+
+    downloadPopup.define();
+
+    ImGui::End(); // DockSpace.
+  }
 }
 
 int WINAPI WinMain(
@@ -161,6 +205,7 @@ int WINAPI WinMain(
 
   ImGuiIO& imGuiIo = ImGui::GetIO();
   imGuiIo.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\LeelawUI.ttf", 16);
+  imGuiIo.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
   window.show();
 

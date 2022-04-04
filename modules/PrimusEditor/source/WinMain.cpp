@@ -200,8 +200,19 @@ static void defineGui()
         {
           continue;
         }
-        if (ImGui::TreeNode(mapNameUtf8))
+        ImGuiTreeNodeFlags treeNodeFlags = 0;
+        if (selectedNodeType == NodeType::Map && selectNodeContext == &map)
         {
+          treeNodeFlags |= ImGuiTreeNodeFlags_Selected;
+        }
+        if (ImGui::TreeNodeEx(mapNameUtf8, treeNodeFlags))
+        {
+          if (ImGui::IsItemClicked())
+          {
+            selectedNodeType = NodeType::Map;
+            selectNodeContext = &map;
+          }
+
           defineTreeLeaf(NodeType::Heightmap, &map.heightmap, (void*)(intptr_t)(map.directoryPath + 1), "heightmap");
 
           defineTreeLeaf(NodeType::Colormap, &map.heightmap, (void*)(intptr_t)(map.directoryPath + 2), "colormap"); // TODO: use some EditorMap class that has colormap thats different form the game class.

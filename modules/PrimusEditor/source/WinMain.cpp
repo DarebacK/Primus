@@ -113,6 +113,31 @@ static std::vector<Map> maps;
 
 static Vec2i viewportSize = { 1920, 1080 }; // TODO: get the true viewport size.
 
+enum class NodeType
+{
+  None = 0,
+  Map,
+  Heightmap,
+  Colormap
+};
+static NodeType selectedNodeType = NodeType::None;
+static const void* selectNodeContext = nullptr;
+
+static void defineTreeLeaf(NodeType nodeType, const void* nodeContext, const void* id, const char* name)
+{
+  ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+  if (selectedNodeType == nodeType && selectNodeContext == nodeContext)
+  {
+    treeNodeFlags |= ImGuiTreeNodeFlags_Selected;
+  }
+  ImGui::TreeNodeEx(id, treeNodeFlags, name);
+  if (ImGui::IsItemClicked())
+  {
+    selectedNodeType = nodeType;
+    selectNodeContext = nodeContext;
+  }
+}
+
 static void defineGui()
 {
   downloadPopup.id = ImGui::GetID("Download");
@@ -177,9 +202,9 @@ static void defineGui()
         }
         if (ImGui::TreeNode(mapNameUtf8))
         {
-          constexpr ImGuiTreeNodeFlags leafFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-          ImGui::TreeNodeEx((void*)(intptr_t)(map.directoryPath + 1), leafFlags, "heightmap");
-          ImGui::TreeNodeEx((void*)(intptr_t)(map.directoryPath + 2), leafFlags, "colormap");
+          defineTreeLeaf(NodeType::Heightmap, &map.heightmap, (void*)(intptr_t)(map.directoryPath + 1), "heightmap");
+
+          defineTreeLeaf(NodeType::Colormap, &map.heightmap, (void*)(intptr_t)(map.directoryPath + 2), "colormap"); // TODO: use some EditorMap class that has colormap thats different form the game class.
 
           ImGui::TreePop();
         }
@@ -196,6 +221,21 @@ static void defineGui()
 
     {
       ImGui::Begin("Inspector");
+
+      switch (selectedNodeType)
+      {
+        case NodeType::Map:
+          ImGui::Text("Map");
+          break;
+        case NodeType::Heightmap:
+          ImGui::Text("Heightmap");
+          break;
+        case NodeType::Colormap:
+          ImGui::Text("Colormap");
+          break;
+        default:
+          break;
+      }
 
       ImGui::End();
     }

@@ -488,14 +488,8 @@ static bool tryInitializeColormap(const Map& map)
   wchar_t filePath[256];
   wsprintfW(filePath, L"%ls\\colormap.jpg", map.directoryPath);
 
-  std::vector<byte> colormapJpeg;
-  if (!tryReadEntireFile(filePath, colormapJpeg))
-  {
-    return false;
-  }
-
   JpegReader jpegReader;
-  Image colormapRgba = jpegReader.read(colormapJpeg.data(), colormapJpeg.size(), PixelFormat::RGBA);
+  Image colormapRgba = jpegReader.read(filePath, PixelFormat::RGBA);
   if (!colormapRgba.data)
   {
     return false;

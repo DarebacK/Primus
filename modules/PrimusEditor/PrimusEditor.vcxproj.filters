@@ -27,6 +27,9 @@
     <ClCompile Include="source\Internet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\EditorMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Heightmap.hpp">
@@ -36,6 +39,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="source\Colormap.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\EditorMap.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

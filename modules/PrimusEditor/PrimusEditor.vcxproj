@@ -153,6 +153,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\Colormap.cpp" />
+    <ClCompile Include="source\EditorMap.cpp" />
     <ClCompile Include="source\Heightmap.cpp" />
     <ClCompile Include="source\Internet.cpp" />
     <ClCompile Include="source\WinMain.cpp" />
@@ -173,6 +174,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\Colormap.hpp" />
+    <ClInclude Include="source\EditorMap.hpp" />
     <ClInclude Include="source\Heightmap.hpp" />
     <ClInclude Include="source\Internet.hpp" />
   </ItemGroup>

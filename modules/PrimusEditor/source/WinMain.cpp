@@ -19,6 +19,7 @@
 #include "Internet.hpp"
 #include "Heightmap.hpp"
 #include "Colormap.hpp"
+#include "EditorMap.hpp"
 
 MainWindow window;
 
@@ -109,7 +110,7 @@ struct DownloadPopup
 
 } downloadPopup;
 
-static std::vector<Map> maps;
+static std::vector<EditorMap> maps;
 
 static Vec2i viewportSize = { 1920, 1080 }; // TODO: get the true viewport size.
 
@@ -123,14 +124,14 @@ enum class NodeType
 static NodeType selectedNodeType = NodeType::None;
 static const void* selectNodeContext = nullptr;
 
-static void defineTreeLeaf(NodeType nodeType, const void* nodeContext, const void* id, const char* name)
+static void defineTreeLeaf(NodeType nodeType, const void* nodeContext, const char* name)
 {
   ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
   if (selectedNodeType == nodeType && selectNodeContext == nodeContext)
   {
     treeNodeFlags |= ImGuiTreeNodeFlags_Selected;
   }
-  ImGui::TreeNodeEx(id, treeNodeFlags, name);
+  ImGui::TreeNodeEx(nodeContext, treeNodeFlags, name);
   if (ImGui::IsItemClicked())
   {
     selectedNodeType = nodeType;
@@ -151,7 +152,7 @@ static void defineGui()
         wchar_t mapFolderPath[MAX_PATH];
         if (tryChooseFolderDialog(window, L"Choose map folder", mapFolderPath))
         {
-          Map openedMap;
+          EditorMap openedMap;
           if (!openedMap.tryLoad(mapFolderPath, verticalFieldOfViewRadians, viewportSize.x / float(viewportSize.y)))
           {
             logError("Failed to load %ls map.", mapFolderPath);
@@ -193,7 +194,7 @@ static void defineGui()
     {
       ImGui::Begin("Maps");
 
-      for (const Map& map : maps)
+      for (const EditorMap& map : maps)
       {
         char mapNameUtf8[1024];
         if (WideCharToMultiByte(CP_UTF8, 0, map.directoryPath, -1, mapNameUtf8, sizeof(mapNameUtf8), NULL, NULL) == 0)
@@ -213,9 +214,9 @@ static void defineGui()
             selectNodeContext = &map;
           }
 
-          defineTreeLeaf(NodeType::Heightmap, &map.heightmap, (void*)(intptr_t)(map.directoryPath + 1), "heightmap");
+          defineTreeLeaf(NodeType::Heightmap, &map.heightmap, "heightmap");
 
-          defineTreeLeaf(NodeType::Colormap, &map.heightmap, (void*)(intptr_t)(map.directoryPath + 2), "colormap"); // TODO: use some EditorMap class that has colormap thats different form the game class.
+          defineTreeLeaf(NodeType::Colormap, &map.colormap, "colormap");
 
           ImGui::TreePop();
         }

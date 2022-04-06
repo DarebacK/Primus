@@ -12,6 +12,8 @@ struct InternetHandleDeleter {
 };
 using InternetHandle = std::unique_ptr<void, InternetHandleDeleter>;
 
+extern InternetHandle internet;
+
 class HttpDownloader
 {
 public:

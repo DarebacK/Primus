@@ -122,12 +122,12 @@ enum class NodeType
   Colormap
 };
 static NodeType selectedNodeType = NodeType::None;
-static const void* selectNodeContext = nullptr;
+static void* selectedNodeContext = nullptr;
 
-static void defineTreeLeaf(NodeType nodeType, const void* nodeContext, const char* name)
+static void defineTreeLeaf(NodeType nodeType, void* nodeContext, const char* name)
 {
   ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-  if (selectedNodeType == nodeType && selectNodeContext == nodeContext)
+  if (selectedNodeType == nodeType && selectedNodeContext == nodeContext)
   {
     treeNodeFlags |= ImGuiTreeNodeFlags_Selected;
   }
@@ -135,7 +135,7 @@ static void defineTreeLeaf(NodeType nodeType, const void* nodeContext, const cha
   if (ImGui::IsItemClicked())
   {
     selectedNodeType = nodeType;
-    selectNodeContext = nodeContext;
+    selectedNodeContext = nodeContext;
   }
 }
 
@@ -194,7 +194,7 @@ static void defineGui()
     {
       ImGui::Begin("Maps");
 
-      for (const EditorMap& map : maps)
+      for (EditorMap& map : maps)
       {
         char mapNameUtf8[1024];
         if (WideCharToMultiByte(CP_UTF8, 0, map.directoryPath, -1, mapNameUtf8, sizeof(mapNameUtf8), NULL, NULL) == 0)
@@ -202,7 +202,7 @@ static void defineGui()
           continue;
         }
         ImGuiTreeNodeFlags treeNodeFlags = 0;
-        if (selectedNodeType == NodeType::Map && selectNodeContext == &map)
+        if (selectedNodeType == NodeType::Map && selectedNodeContext == &map)
         {
           treeNodeFlags |= ImGuiTreeNodeFlags_Selected;
         }
@@ -211,7 +211,7 @@ static void defineGui()
           if (ImGui::IsItemClicked())
           {
             selectedNodeType = NodeType::Map;
-            selectNodeContext = &map;
+            selectedNodeContext = &map;
           }
 
           defineTreeLeaf(NodeType::Heightmap, &map.heightmap, "heightmap");
@@ -244,6 +244,25 @@ static void defineGui()
           break;
         case NodeType::Colormap:
           ImGui::Text("Colormap");
+          break;
+        default:
+          break;
+      }
+
+      ImGui::Separator();
+
+      switch (selectedNodeType)
+      {
+        case NodeType::Map:
+          break;
+        case NodeType::Heightmap:
+          if (ImGui::Button("Fix land elevation"))
+          {
+            // Heightmap* heightmap = reinterpret_cast<Heightmap*>(selectedNodeContext);
+            maps[0].tryFixLandElevation();
+          }
+          break;
+        case NodeType::Colormap:
           break;
         default:
           break;

@@ -1,5 +1,7 @@
 #include "Internet.hpp"
 
+InternetHandle internet{ InternetOpen(L"Primus MapTool", INTERNET_OPEN_TYPE_DIRECT, nullptr, nullptr, 0) };
+
 HttpDownloader::HttpDownloader(HINTERNET internet, const wchar_t* server)
   : serverConnection{ InternetConnect(internet, server, INTERNET_DEFAULT_HTTPS_PORT, nullptr, nullptr, INTERNET_SERVICE_HTTP, 0, NULL) }
 {
@@ -7,7 +9,7 @@ HttpDownloader::HttpDownloader(HINTERNET internet, const wchar_t* server)
 
 bool HttpDownloader::tryDownloadImage(const wchar_t* url, std::vector<byte>& buffer)
 {
-  const wchar_t* acceptTypes[] = { L"image/png", L"image/jpeg", NULL};
+  const wchar_t* acceptTypes[] = { L"image/png", L"image/jpeg", L"image/webp", NULL};
   constexpr DWORD httpRequestFlags = INTERNET_FLAG_KEEP_CONNECTION | INTERNET_FLAG_CACHE_IF_NET_FAIL | INTERNET_FLAG_SECURE;
 
   InternetHandle httpRequest{ HttpOpenRequest(serverConnection.get(), L"GET", url, nullptr, nullptr, acceptTypes, httpRequestFlags, NULL) };

@@ -19,6 +19,6 @@ float4 pixelShaderMain(Input input) : SV_TARGET
 {
 	const float t = step(0.f, input.heightInMeters);
 	const float4 waterColor = lerp(deepestWaterColor, shallowestWaterColor, smoothstep(deepestWaterHeight, shallowestWaterHeight, input.heightInMeters));
-	const float4 landColor = colormap.Sample(colormapSampler, input.uv); /*float4(input.uv.x, input.uv.y, 0.f, 1.0f)*/;
+	const float4 landColor = colormap.Sample(colormapSampler, input.uv);
 	return lerp(waterColor, landColor, t);
 }

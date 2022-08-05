@@ -4,8 +4,6 @@
 #include "Primus/Frame.hpp"
 #include "Primus/Map.hpp"
 
-class TaskScheduler;
-
 class D3D11Renderer {
 public:
 

@@ -123,6 +123,8 @@ int WINAPI WinMain(
   int showCode
 )
 {
+  TRACE_START_CAPTURE();
+
   process = GetCurrentProcess();
 
   SYSTEM_INFO systemInfo;
@@ -134,11 +136,6 @@ int WINAPI WinMain(
   if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST))
   {
     logWarning("Failed to set highest thread priority for the main thread.");
-  }
-
-  if (SetThreadAffinityMask(GetCurrentThread(), DWORD_PTR(1)) == 0)
-  {
-    logWarning("Failed to set thread affinity for the main thread.");
   }
 
   taskScheduler.initialize();
@@ -168,6 +165,9 @@ int WINAPI WinMain(
     window.showErrorMessageBox(L"Failed to initialize game.", L"Fatal error");
     return -1;
   }
+
+  // TODO: ensure the folder is created
+  TRACE_STOP_CAPTURE("profiling\\GameLoad.opt");
 
   runGameLoop([&](int64 frameIndex, float timeDelta) {
     nextFrame->input.cursorPosition = window.getCursorPosition();

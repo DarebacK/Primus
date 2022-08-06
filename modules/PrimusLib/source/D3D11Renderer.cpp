@@ -193,6 +193,8 @@ static void initializeTerrain()
 
 bool D3D11Renderer::tryInitialize(HWND window)
 {
+  TRACE_SCOPE();
+
   // DEVICE
   UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef DAR_DEBUG
@@ -395,6 +397,8 @@ void D3D11Renderer::setMainRenderTarget()
 
 static bool tryInitializeHeightmap(const Map& map)
 {
+  TRACE_SCOPE();
+
   const D3D11_TEXTURE2D_DESC heightmapTextureDescription = {
     UINT(map.heightmap.width),
     UINT(map.heightmap.height),
@@ -485,6 +489,8 @@ static bool tryInitializeHeightmap(const Map& map)
 
 static bool tryInitializeColormap(const Map& map)
 {
+  TRACE_SCOPE();
+
   wchar_t filePath[256];
   wsprintfW(filePath, L"%ls\\colormap.jpg", map.directoryPath);
 
@@ -547,6 +553,8 @@ static bool tryInitializeColormap(const Map& map)
 
 bool D3D11Renderer::tryLoadMap(const Map& map)
 {
+  TRACE_SCOPE();
+
   if (!tryInitializeHeightmap(map))
   {
     return false;
@@ -659,6 +667,8 @@ static void render2D(const Frame& frameState)
 
 void D3D11Renderer::render(const Frame& frameState, const Map& map)
 {
+  TRACE_SCOPE();
+
   setMainRenderTarget();
 
 #ifdef DAR_DEBUG
@@ -684,6 +694,8 @@ void D3D11Renderer::setBackBufferRenderTarget()
 
 void D3D11Renderer::endRender()
 {
+  TRACE_SCOPE("Present frame");
+
   UINT presentFlags = 0;
   swapChain->Present(1, presentFlags);
 }

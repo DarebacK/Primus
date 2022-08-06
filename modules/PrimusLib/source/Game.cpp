@@ -12,6 +12,8 @@ Map currentMap;
 
 bool Game::tryInitialize(Frame& firstFrame, D3D11Renderer& renderer)
 {
+  TRACE_SCOPE();
+
   wchar_t mapDirectoryPath[256];
   swprintf_s(mapDirectoryPath, L"%ls/italy", MAPS_DIRECTORY);
   if (!currentMap.tryLoad(mapDirectoryPath, verticalFieldOfViewRadians, firstFrame.aspectRatio))

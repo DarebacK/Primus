@@ -26,6 +26,8 @@ Heightmap::~Heightmap()
 
 bool Heightmap::tryLoad(const wchar_t* mapDirectoryPath)
 {
+  TRACE_SCOPE();
+
   reset();
 
   wchar_t mapFilePath[128];
@@ -105,6 +107,8 @@ void Heightmap::reset()
 
 bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio)
 {
+  TRACE_SCOPE();
+
   wcscpy_s(directoryPath, mapDirectoryPath);
 
   if (!heightmap.tryLoad(mapDirectoryPath))

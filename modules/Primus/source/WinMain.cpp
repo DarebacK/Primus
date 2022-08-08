@@ -123,6 +123,7 @@ int WINAPI WinMain(
   int showCode
 )
 {
+  // TODO: do only in profile configuration
   TRACE_START_CAPTURE();
 
   process = GetCurrentProcess();
@@ -138,7 +139,7 @@ int WINAPI WinMain(
     logWarning("Failed to set highest thread priority for the main thread.");
   }
 
-  taskScheduler.initialize();
+  TaskSchedulerGuard taskSchedulerGuard;
 
   D3D11Renderer renderer;
   if (!renderer.tryInitialize(window)) {

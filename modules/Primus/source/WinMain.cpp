@@ -182,6 +182,8 @@ int WINAPI WinMain(
     debugText(L"%.3f s / %d fps", nextFrame->deltaTime, (int)(1.f / nextFrame->deltaTime));
     debugShowResourcesUsage();
 
+    taskScheduler.processMainTasks();
+
     game.update(*lastFrame, *nextFrame, renderer);
 
     if (lastFrame->clientAreaWidth != clientAreaWidth || lastFrame->clientAreaHeight != clientAreaHeight) {

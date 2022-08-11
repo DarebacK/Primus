@@ -4,6 +4,7 @@
 #include "Primus/ShaderRegistry.hpp"
 
 #include "Core/Task.hpp"
+#include "Core/Asset.hpp"
 
 #include <vector>
 
@@ -487,19 +488,16 @@ static bool tryInitializeHeightmap(const Map& map)
   return true;
 }
 
-static bool tryInitializeColormap(const Map& map)
+struct InitializeColormapTaskData
 {
-  TRACE_SCOPE();
+  Image colormapRgba;
+};
+DEFINE_TASK_BEGIN(initializeColormap, InitializeColormapTaskData)
+{
+  // TODO: do the guard for every data by default in DEFINE_TASK_BEGIN ?
+  std::unique_ptr<InitializeColormapTaskData> taskDataGuard{ static_cast<InitializeColormapTaskData*>(&taskData) };
 
-  wchar_t filePath[256];
-  wsprintfW(filePath, L"%ls\\colormap.jpg", map.directoryPath);
-
-  JpegReader jpegReader;
-  Image colormapRgba = jpegReader.read(filePath, PixelFormat::RGBA);
-  if (!colormapRgba.data)
-  {
-    return false;
-  }
+  const Image& colormapRgba = taskData.colormapRgba;
 
   // TODO: compression?
   // TODO: mips?
@@ -525,7 +523,7 @@ static bool tryInitializeColormap(const Map& map)
   if (FAILED(device->CreateTexture2D(&colormapTextureDescription, &colormapTextureData, &colormapTexture)))
   {
     logError("Failed to create colormap texture.");
-    return false;
+    return;
   }
 
   D3D11_SHADER_RESOURCE_VIEW_DESC colormapShaderResourceViewDescription;
@@ -538,16 +536,55 @@ static bool tryInitializeColormap(const Map& map)
   if (FAILED(device->CreateShaderResourceView(colormapTexture, &colormapShaderResourceViewDescription, &colormapTextureView)))
   {
     logError("Failed to create heightmap shader resource view.");
-    return false;
+    return;
   }
 
   colormapSampler.Release();
   if (FAILED(device->CreateSamplerState(&colormapSamplerDescription, &colormapSampler)))
   {
     logError("Failed to create heightmap texture sampler.");
-    return false;
+    return;
+  }
+}
+DEFINE_TASK_END
+
+struct DecompressColormapTaskData
+{
+  std::vector<byte> jpegData;
+};
+DEFINE_TASK_BEGIN(decompressColormap, DecompressColormapTaskData)
+{
+  // TODO: do the guard for every data by default in DEFINE_TASK_BEGIN ?
+  std::unique_ptr<DecompressColormapTaskData> taskDataGuard{ static_cast<DecompressColormapTaskData*>(&taskData) };
+
+  JpegReader jpegReader;
+  Image colormapRgba = jpegReader.read(taskData.jpegData.data(), taskData.jpegData.size(), PixelFormat::RGBA);
+  if (!colormapRgba.data)
+  {
+    logError("Failed to read colormap jpeg data.");
+    return;
   }
 
+  InitializeColormapTaskData* initializeTaskData = new InitializeColormapTaskData{ std::move(colormapRgba) };
+  taskScheduler.scheduleToMain(initializeColormap, initializeTaskData);
+}
+DEFINE_TASK_END
+
+static bool tryInitializeColormap(const Map& map)
+{
+  TRACE_SCOPE();
+
+  wchar_t filePath[256];
+  wsprintfW(filePath, L"%ls\\colormap.jpg", map.directoryPath);
+
+  assetManager.loadAsync(filePath, [](AssetManager::AsyncLoadResult& result) 
+    {
+      DecompressColormapTaskData* taskData = new DecompressColormapTaskData{std::move(result.data)};
+      taskScheduler.scheduleToWorker(decompressColormap, taskData);
+    }
+  );
+
+  // TODO: get rid of boolean return as this is now async.
   return true;
 }
 
@@ -628,6 +665,14 @@ static void drawDebugText(const Frame& frameState)
 
 static void renderTerrain(const Frame& frame, const Map& map)
 {
+  // TODO: don't render any part of the map until it's fully loaded.
+  if (!colormapTextureView)
+  {
+    return;
+  }
+
+  TRACE_SCOPE();
+
   context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
   context->IASetInputLayout(FullScreenInputLayout);
   context->IASetIndexBuffer(terrainIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
@@ -651,6 +696,8 @@ static void renderTerrain(const Frame& frame, const Map& map)
 
 static void render3D(const Frame& frameState, const Map& map)
 {
+  TRACE_SCOPE();
+
   renderTerrain(frameState, map);
 
   resolveRenderTargetIntoBackBuffer();
@@ -658,6 +705,8 @@ static void render3D(const Frame& frameState, const Map& map)
 
 static void render2D(const Frame& frameState)
 {
+  TRACE_SCOPE();
+
   d2Context->BeginDraw();
 
   drawDebugText(frameState);

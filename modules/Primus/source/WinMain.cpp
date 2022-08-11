@@ -5,6 +5,7 @@
 #include "Core/Core.hpp"
 #include "Core/Math.hpp"
 #include "Core/Task.hpp"
+#include "Core/Asset.hpp"
 #include "Core/WindowsPlatform.h"
 
 #include <windowsx.h>
@@ -141,6 +142,12 @@ int WINAPI WinMain(
 
   TaskSchedulerGuard taskSchedulerGuard;
 
+  if (!assetManager.tryInitialize())
+  {
+    window.showErrorMessageBox(L"Failed to initialize AssetManager", L"Fatal error");
+    return -1;
+  }
+
   D3D11Renderer renderer;
   if (!renderer.tryInitialize(window)) {
     window.showErrorMessageBox(L"Failed to initialize Direct3D11 renderer", L"Fatal error");
@@ -166,9 +173,6 @@ int WINAPI WinMain(
     window.showErrorMessageBox(L"Failed to initialize game.", L"Fatal error");
     return -1;
   }
-
-  // TODO: ensure the folder is created
-  TRACE_STOP_CAPTURE("profiling\\GameLoad.opt");
 
   runGameLoop([&](int64 frameIndex, float timeDelta) {
     nextFrame->input.cursorPosition = window.getCursorPosition();
@@ -197,6 +201,10 @@ int WINAPI WinMain(
     nextFrame->input = lastFrame->input;
     nextFrame->input.resetForNextFrame();
   });
+
+  // TODO: ensure the folder is created
+  // TODO: stop when actually loaded
+  TRACE_STOP_CAPTURE("profiling\\GameLoad.opt");
 
   return 0;
 }

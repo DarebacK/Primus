@@ -445,7 +445,7 @@ static bool tryInitializeHeightmap(const Map& map)
 
   std::vector<uint32> indices;
   indices.resize(terrainIndexBufferLength);
-  taskScheduler.parallelFor(0, rowCount - 1, [&heightmap = map.heightmap, indicesData = indices.data()](int64 i, int64 threadIndex) {
+  taskManager.parallelFor(0, rowCount - 1, [&heightmap = map.heightmap, indicesData = indices.data()](int64 i, int64 threadIndex) {
     const uint32 rowIndex = uint32(heightmap.height - 2 - i); // Start from bottom for clockwise winding order.
     const uint32 baseUpVertexIndex = rowIndex * heightmap.width;
     const uint32 baseDownVertexIndex = (rowIndex + 1) * heightmap.width;
@@ -567,7 +567,7 @@ DEFINE_TASK_BEGIN(decompressColormap, DecompressColormapTaskData)
   }
 
   InitializeColormapTaskData* initializeTaskData = new InitializeColormapTaskData{ std::move(colormapRgba) };
-  taskScheduler.scheduleToMain(initializeColormap, initializeTaskData);
+  taskManager.schedule(initializeColormap, initializeTaskData, ThreadType::Main);
 }
 DEFINE_TASK_END
 
@@ -581,7 +581,7 @@ static bool tryInitializeColormap(const Map& map)
   assetManager.loadAsync(filePath, [](AssetManager::AsyncLoadResult& result) 
     {
       DecompressColormapTaskData* taskData = new DecompressColormapTaskData{std::move(result.data)};
-      taskScheduler.scheduleToWorker(decompressColormap, taskData);
+      taskManager.schedule(decompressColormap, taskData, ThreadType::Worker);
     }
   );
 

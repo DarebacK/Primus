@@ -53,7 +53,7 @@ bool Heightmap::tryLoad(const wchar_t* mapDirectoryPath)
 
   std::atomic<int16> atomicMinElevation = 0;
   std::atomic<int16> atomicMaxElevation = 0;
-  taskScheduler.parallelFor(0, image.height, [this, &atomicMinElevation, &atomicMaxElevation](int64 i, int64 threadIndex) {
+  taskManager.parallelFor(0, image.height, [this, &atomicMinElevation, &atomicMaxElevation](int64 i, int64 threadIndex) {
     int16 localMinElevation = std::numeric_limits<int16>::max();
     int16 localMaxElevation = std::numeric_limits<int16>::min();
     uint16* const grayscaleDataRow = reinterpret_cast<uint16*>(data) + i * width;

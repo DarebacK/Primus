@@ -331,7 +331,7 @@ bool D3D11Renderer::tryInitialize(HWND window)
   debugTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 #endif
 
-  reloadShaders(L"shaders\\build");
+  reloadShaders(L"assets\\shaders\\build");
 
   initializeTerrain();
 
@@ -520,6 +520,7 @@ DEFINE_TASK_BEGIN(initializeColormap, InitializeColormapTaskData)
   colormapTextureData.SysMemSlicePitch = 0;
 
   colormapTexture.Release();
+  // TODO: This take quite a long time. Maybe use a staging texture with asynchronous copy into it?
   if (FAILED(device->CreateTexture2D(&colormapTextureDescription, &colormapTextureData, &colormapTexture)))
   {
     logError("Failed to create colormap texture.");
@@ -725,7 +726,7 @@ void D3D11Renderer::render(const Frame& frameState, const Map& map)
     switchWireframeState();
   }
   if (frameState.input.keyboard.F5.pressedDown) {
-    reloadShaders(L"shaders\\build");
+    reloadShaders(L"assets\\shaders\\build");
   }
 
   displayVideoMemoryInfo();

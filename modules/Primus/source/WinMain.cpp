@@ -6,6 +6,7 @@
 #include "Core/Math.hpp"
 #include "Core/Task.hpp"
 #include "Core/Asset.hpp"
+#include "Core/File.hpp"
 #include "Core/WindowsPlatform.h"
 
 #include <windowsx.h>
@@ -142,11 +143,7 @@ int WINAPI WinMain(
 
   TaskManagerGuard taskManagerGuard;
 
-  if (!assetManager.tryInitialize())
-  {
-    window.showErrorMessageBox(L"Failed to initialize AssetManager", L"Fatal error");
-    return -1;
-  }
+  FileSystemGuard fileSystemGuard;
 
   D3D11Renderer renderer;
   if (!renderer.tryInitialize(window)) {

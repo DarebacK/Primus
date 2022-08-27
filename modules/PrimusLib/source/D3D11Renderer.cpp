@@ -5,6 +5,7 @@
 
 #include "Core/Task.hpp"
 #include "Core/Asset.hpp"
+#include "Core/File.hpp"
 
 #include <vector>
 
@@ -578,8 +579,9 @@ static bool tryInitializeColormap(const Map& map)
   wchar_t filePath[256];
   wsprintfW(filePath, L"%ls\\colormap.jpg", map.directoryPath);
 
-  assetManager.loadAsync(filePath, [](AssetManager::AsyncLoadResult& result) 
+  readFileAsync(filePath, [](ReadFileAsyncResult& result) 
     {
+      // TODO: error handling
       DecompressColormapTaskData* taskData = new DecompressColormapTaskData{std::move(result.data)};
       taskManager.schedule(decompressColormap, taskData, ThreadType::Worker);
     }

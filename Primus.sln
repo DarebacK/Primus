@@ -14,6 +14,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrimusLib", "modules\Primus
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImGui", "..\DarEngine\modules\ImGui\ImGui.vcxproj", "{B9252282-F2E0-430C-A9DD-54A4EDB353F3}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DarEngineTest", "..\DarEngine\modules\DarEngineTest\DarEngineTest.vcxproj", "{C303FDEB-5917-4CC1-81AF-59E657555F47}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -44,6 +46,10 @@ Global
 		{B9252282-F2E0-430C-A9DD-54A4EDB353F3}.Debug|x64.Build.0 = Debug|x64
 		{B9252282-F2E0-430C-A9DD-54A4EDB353F3}.Release|x64.ActiveCfg = Release|x64
 		{B9252282-F2E0-430C-A9DD-54A4EDB353F3}.Release|x64.Build.0 = Release|x64
+		{C303FDEB-5917-4CC1-81AF-59E657555F47}.Debug|x64.ActiveCfg = Debug|x64
+		{C303FDEB-5917-4CC1-81AF-59E657555F47}.Debug|x64.Build.0 = Debug|x64
+		{C303FDEB-5917-4CC1-81AF-59E657555F47}.Release|x64.ActiveCfg = Release|x64
+		{C303FDEB-5917-4CC1-81AF-59E657555F47}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

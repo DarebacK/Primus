@@ -332,7 +332,7 @@ bool D3D11Renderer::tryInitialize(HWND window)
   debugTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 #endif
 
-  reloadShaders(L"assets\\shaders\\build");
+  reloadShaders(L"shaders\\build");
 
   initializeTerrain();
 
@@ -728,7 +728,7 @@ void D3D11Renderer::render(const Frame& frameState, const Map& map)
     switchWireframeState();
   }
   if (frameState.input.keyboard.F5.pressedDown) {
-    reloadShaders(L"assets\\shaders\\build");
+    reloadShaders(L"shaders\\build");
   }
 
   displayVideoMemoryInfo();

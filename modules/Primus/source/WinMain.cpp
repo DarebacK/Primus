@@ -145,6 +145,8 @@ int WINAPI WinMain(
 
   FileSystemGuard fileSystemGuard;
 
+  initializeAssetSystem();
+
   D3D11Renderer renderer;
   if (!renderer.tryInitialize(window)) {
     window.showErrorMessageBox(L"Failed to initialize Direct3D11 renderer", L"Fatal error");

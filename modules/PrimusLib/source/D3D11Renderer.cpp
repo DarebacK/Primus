@@ -13,7 +13,7 @@
 #include <dwrite_2.h>
 #include <d2d1_2.h>
 
-#include "D3D11/ShaderRegistryImpl.inl"
+#include "Core/ShaderRegistryImpl.inl"
 #include "IndexBuffers.inl"
 #include "ConstantBuffers.inl"
 

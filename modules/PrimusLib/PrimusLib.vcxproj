@@ -28,9 +28,6 @@
     <ProjectReference Include="..\..\..\DarEngine\modules\Core\Core.vcxproj">
       <Project>{11435bca-afc5-4c10-8260-a55637caa4b6}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\DarEngine\modules\D3D11\D3D11.vcxproj">
-      <Project>{cf093d3b-6e7b-4224-969e-112b92e8bb12}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\include\Primus\Shaders.inl" />

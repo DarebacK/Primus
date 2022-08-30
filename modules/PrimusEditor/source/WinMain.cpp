@@ -94,7 +94,17 @@ struct DownloadPopup
 
       if (ImGui::Button("Download"))
       {
-        // TODO: download
+        InternetHandle internet{ InternetOpen(L"PrimusEditor", INTERNET_OPEN_TYPE_DIRECT, nullptr, nullptr, 0) };
+        if (!internet)
+        {
+          logError("InternetOpen failed.");
+        }
+        else
+        {
+          //downloadHeightmap(internet.get(), "heightmap.png");
+          // TODO: do this asynchronously, show a progress bar, make the output a BC1 DDS file.
+          downloadColormap(internet.get(), "colormap.jpg"); // TODO: dont put the extension here, it should be decided by the implementation.
+        }
         ImGui::CloseCurrentPopup();
       }
       ImGui::SameLine();
@@ -278,10 +288,10 @@ static void defineGui()
 
     ImGui::ShowDemoWindow();
 
-    downloadPopup.define();
-
     ImGui::End(); // DockSpace.
   }
+
+  downloadPopup.define();
 }
 
 int WINAPI WinMain(

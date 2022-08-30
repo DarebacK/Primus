@@ -4,8 +4,7 @@
 #include "Core/Task.hpp"
 #include "Core/Image.hpp"
 #include "Core/WindowsPlatform.h"
-
-#include "D3D11/D3D11.hpp"
+#include "Core/D3D11.hpp"
 
 #include "ImGui/ImGui.hpp"
 

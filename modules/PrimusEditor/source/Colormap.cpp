@@ -29,7 +29,7 @@ namespace {
   const wchar_t* requestUrlEnd = L".jpg?key=jv0AKvuMCw6M6sWGYF8M";
 }
 
-void downloadColormap(HINTERNET internet, const char* outputFilePath)
+void downloadColormap(HINTERNET internet, const char* outputFileName)
 {
   HttpDownloader downloader{ internet, serverUrl };
 
@@ -42,9 +42,7 @@ void downloadColormap(HINTERNET internet, const char* outputFilePath)
   }
   colormap.width = widthInPixels;
   colormap.height = heightInPixels;
-  colormap.pixelFormat = PixelFormat::RGB;
-
-  JpegReader jpegReader;
+  colormap.pixelFormat = PixelFormat::BGR;
 
   std::vector<std::vector<byte>> contentBuffers;
   contentBuffers.resize(tileCount);
@@ -98,6 +96,10 @@ void downloadColormap(HINTERNET internet, const char* outputFilePath)
     }
   });
 
-  JpegWriter jpegWriter;
-  jpegWriter.tryWrite(colormap, 100, "colormap.jpg"); // This creates bigger file than the original. If this is an issue, dive deeper into the jpeg compression.
+  ImageEncoder encoder;
+  Image colormapBc1 = encoder.ToBC1Parallel(colormap, 100);
+
+  char outputFilePath[MAX_PATH];
+  sprintf_s(outputFilePath, "%s.dds", outputFileName);
+  writeAsDds(colormapBc1, outputFilePath);
 }

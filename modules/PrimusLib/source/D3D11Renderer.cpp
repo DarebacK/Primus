@@ -572,18 +572,34 @@ DEFINE_TASK_BEGIN(decompressColormap, DecompressColormapTaskData)
 }
 DEFINE_TASK_END
 
+DEFINE_TASK_BEGIN(createColormapFromDDS, DecompressColormapTaskData)
+{
+  // TODO: do the guard for every data by default in DEFINE_TASK_BEGIN ?
+  std::unique_ptr<DecompressColormapTaskData> taskDataGuard{ static_cast<DecompressColormapTaskData*>(&taskData) };
+
+  createTextureFromDDS(taskData.jpegData.data(), taskData.jpegData.size(), (ID3D11Resource**)&colormapTexture, &colormapTextureView);
+
+  colormapSampler.Release();
+  if (FAILED(device->CreateSamplerState(&colormapSamplerDescription, &colormapSampler)))
+  {
+    logError("Failed to create heightmap texture sampler.");
+  }
+}
+DEFINE_TASK_END
+
 static bool tryInitializeColormap(const Map& map)
 {
   TRACE_SCOPE();
 
   wchar_t filePath[256];
-  wsprintfW(filePath, L"%ls\\colormap.jpg", map.directoryPath);
+  wsprintfW(filePath, L"%ls\\colormap.dds", map.directoryPath);
 
   readFileAsync(filePath, [](ReadFileAsyncResult& result) 
     {
       // TODO: error handling
       DecompressColormapTaskData* taskData = new DecompressColormapTaskData{std::move(result.data)};
-      taskManager.schedule(decompressColormap, taskData, ThreadType::Worker);
+      taskManager.schedule(createColormapFromDDS, taskData, ThreadType::Main);
+      //taskManager.schedule(decompressColormap, taskData, ThreadType::Worker);
     }
   );
 

@@ -2,4 +2,4 @@
 
 #include "Internet.hpp"
 
-void downloadColormap(HINTERNET internet, const char* outputFilePath);
+void downloadColormap(HINTERNET internet, const char* outputFileName);

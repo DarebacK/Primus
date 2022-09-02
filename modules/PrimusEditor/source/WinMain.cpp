@@ -102,8 +102,8 @@ struct DownloadPopup
         else
         {
           //downloadHeightmap(internet.get(), "heightmap.png");
-          // TODO: do this asynchronously, show a progress bar, make the output a BC1 DDS file.
-          downloadColormap(internet.get(), "colormap.jpg"); // TODO: dont put the extension here, it should be decided by the implementation.
+          // TODO: use parameters from the user (including file name), do this asynchronously, show a progress bar.
+          downloadColormap(internet.get(), "colormap");
         }
         ImGui::CloseCurrentPopup();
       }

@@ -489,72 +489,10 @@ static bool tryInitializeHeightmap(const Map& map)
   return true;
 }
 
-struct InitializeColormapTaskData
-{
-  Image colormapRgba;
-};
-DEFINE_TASK_BEGIN(initializeColormap, InitializeColormapTaskData)
-{
-  // TODO: do the guard for every data by default in DEFINE_TASK_BEGIN ?
-  std::unique_ptr<InitializeColormapTaskData> taskDataGuard{ static_cast<InitializeColormapTaskData*>(&taskData) };
-
-  const Image& colormapRgba = taskData.colormapRgba;
-
-  // TODO: compression?
-  // TODO: mips?
-  const D3D11_TEXTURE2D_DESC colormapTextureDescription = {
-    colormapRgba.width,
-    colormapRgba.height,
-    1,
-    1,
-    DXGI_FORMAT_R8G8B8A8_UNORM, // TODO: SRGB?
-    {1, 0},
-    D3D11_USAGE_IMMUTABLE,
-    D3D11_BIND_SHADER_RESOURCE,
-    0,
-    0
-  };
-
-  D3D11_SUBRESOURCE_DATA colormapTextureData;
-  colormapTextureData.pSysMem = colormapRgba.data;
-  colormapTextureData.SysMemPitch = colormapRgba.width * 4;
-  colormapTextureData.SysMemSlicePitch = 0;
-
-  colormapTexture.Release();
-  // TODO: This take quite a long time. Maybe use a staging texture with asynchronous copy into it?
-  if (FAILED(device->CreateTexture2D(&colormapTextureDescription, &colormapTextureData, &colormapTexture)))
-  {
-    logError("Failed to create colormap texture.");
-    return;
-  }
-
-  D3D11_SHADER_RESOURCE_VIEW_DESC colormapShaderResourceViewDescription;
-  colormapShaderResourceViewDescription.Format = colormapTextureDescription.Format;
-  colormapShaderResourceViewDescription.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-  colormapShaderResourceViewDescription.Texture2D.MostDetailedMip = 0;
-  colormapShaderResourceViewDescription.Texture2D.MipLevels = 1;
-
-  colormapTextureView.Release();
-  if (FAILED(device->CreateShaderResourceView(colormapTexture, &colormapShaderResourceViewDescription, &colormapTextureView)))
-  {
-    logError("Failed to create heightmap shader resource view.");
-    return;
-  }
-
-  colormapSampler.Release();
-  if (FAILED(device->CreateSamplerState(&colormapSamplerDescription, &colormapSampler)))
-  {
-    logError("Failed to create heightmap texture sampler.");
-    return;
-  }
-}
-DEFINE_TASK_END
-
 struct createColormapFromDDSTaskData
 {
   std::vector<byte> dds;
 };
-
 DEFINE_TASK_BEGIN(createColormapFromDDS, createColormapFromDDSTaskData)
 {
   // TODO: do the guard for every data by default in DEFINE_TASK_BEGIN ?

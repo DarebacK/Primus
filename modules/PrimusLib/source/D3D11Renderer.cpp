@@ -550,34 +550,17 @@ DEFINE_TASK_BEGIN(initializeColormap, InitializeColormapTaskData)
 }
 DEFINE_TASK_END
 
-struct DecompressColormapTaskData
+struct createColormapFromDDSTaskData
 {
-  std::vector<byte> jpegData;
+  std::vector<byte> dds;
 };
-DEFINE_TASK_BEGIN(decompressColormap, DecompressColormapTaskData)
+
+DEFINE_TASK_BEGIN(createColormapFromDDS, createColormapFromDDSTaskData)
 {
   // TODO: do the guard for every data by default in DEFINE_TASK_BEGIN ?
-  std::unique_ptr<DecompressColormapTaskData> taskDataGuard{ static_cast<DecompressColormapTaskData*>(&taskData) };
+  std::unique_ptr<createColormapFromDDSTaskData> taskDataGuard{ static_cast<createColormapFromDDSTaskData*>(&taskData) };
 
-  JpegReader jpegReader;
-  Image colormapRgba = jpegReader.read(taskData.jpegData.data(), taskData.jpegData.size(), PixelFormat::RGBA);
-  if (!colormapRgba.data)
-  {
-    logError("Failed to read colormap jpeg data.");
-    return;
-  }
-
-  InitializeColormapTaskData* initializeTaskData = new InitializeColormapTaskData{ std::move(colormapRgba) };
-  taskManager.schedule(initializeColormap, initializeTaskData, ThreadType::Main);
-}
-DEFINE_TASK_END
-
-DEFINE_TASK_BEGIN(createColormapFromDDS, DecompressColormapTaskData)
-{
-  // TODO: do the guard for every data by default in DEFINE_TASK_BEGIN ?
-  std::unique_ptr<DecompressColormapTaskData> taskDataGuard{ static_cast<DecompressColormapTaskData*>(&taskData) };
-
-  createTextureFromDDS(taskData.jpegData.data(), taskData.jpegData.size(), (ID3D11Resource**)&colormapTexture, &colormapTextureView);
+  createTextureFromDDS(taskData.dds.data(), taskData.dds.size(), (ID3D11Resource**)&colormapTexture, &colormapTextureView);
 
   colormapSampler.Release();
   if (FAILED(device->CreateSamplerState(&colormapSamplerDescription, &colormapSampler)))
@@ -597,9 +580,8 @@ static bool tryInitializeColormap(const Map& map)
   readFileAsync(filePath, [](ReadFileAsyncResult& result) 
     {
       // TODO: error handling
-      DecompressColormapTaskData* taskData = new DecompressColormapTaskData{std::move(result.data)};
+      createColormapFromDDSTaskData* taskData = new createColormapFromDDSTaskData{std::move(result.data)};
       taskManager.schedule(createColormapFromDDS, taskData, ThreadType::Main);
-      //taskManager.schedule(decompressColormap, taskData, ThreadType::Worker);
     }
   );
 

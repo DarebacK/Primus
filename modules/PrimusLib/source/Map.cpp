@@ -60,7 +60,7 @@ bool Heightmap::tryLoad(const wchar_t* mapDirectoryPath)
     int16* const elevationDataRow = reinterpret_cast<int16*>(grayscaleDataRow);
     for (int64 x = 0; x < width; x++)
     {
-      elevationDataRow[x] = static_cast<int16>(static_cast<int32>(bigEndianToNative(grayscaleDataRow[x])) - 11000);
+      elevationDataRow[x] = static_cast<int16>(bigEndianToNative(grayscaleDataRow[x]));
       localMinElevation = std::min(localMinElevation, elevationDataRow[x]);
       localMaxElevation = std::max(localMaxElevation, elevationDataRow[x]);
     }
@@ -86,6 +86,7 @@ bool Heightmap::tryLoad(const wchar_t* mapDirectoryPath)
     }
   });
 
+  // TODO: this data should be preprocessed
   minElevationInM = atomicMinElevation.load(std::memory_order_relaxed);
   maxElevationInM = atomicMaxElevation.load(std::memory_order_relaxed);
   minElevationInKm = minElevationInM / 1000.f;

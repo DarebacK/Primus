@@ -2,4 +2,4 @@
 
 #include "Internet.hpp"
 
-void downloadHeightmap(HINTERNET internet, const char* outputFilePath);
+void downloadHeightmap(HINTERNET internet, const char* outputFileName);

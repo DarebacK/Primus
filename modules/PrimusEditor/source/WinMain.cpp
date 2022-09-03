@@ -101,8 +101,8 @@ struct DownloadPopup
         }
         else
         {
-          //downloadHeightmap(internet.get(), "heightmap.png");
           // TODO: use parameters from the user (including file name), do this asynchronously, show a progress bar.
+          downloadHeightmap(internet.get(), "heightmap");
           downloadColormap(internet.get(), "colormap");
         }
         ImGui::CloseCurrentPopup();

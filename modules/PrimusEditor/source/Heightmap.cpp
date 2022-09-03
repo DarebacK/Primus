@@ -24,11 +24,9 @@ namespace {
   const wchar_t* serverUrl = L"tile.nextzen.org";
   const wchar_t* requestUrlBegin = L"tilezen/terrain/v1/" WSTRINGIFY_DEFINE(TILE_SIZE) L"/terrarium/" WSTRINGIFY_DEFINE(TILE_ZOOM);
   const wchar_t* requestUrlEnd = L".png?api_key=XeM2Tf-mRS6G1orxmShMzg";
-
-  constexpr uint16 elevationOffset = 11000; // Used to convert below sea elevations to unsigned int range. 11000 because deepest point is ~10935 meters.
 }
 
-void downloadHeightmap(HINTERNET internet, const char* outputFilePath)
+void downloadHeightmap(HINTERNET internet, const char* outputFileName)
 {
   HttpDownloader downloader{ internet, serverUrl };
 
@@ -74,7 +72,7 @@ void downloadHeightmap(HINTERNET internet, const char* outputFilePath)
           uint8 r = *readDataIterator++;
           uint8 g = *readDataIterator++;
           uint8 b = *readDataIterator++;
-          uint16 elevationInMeters = uint16(r) * uint16(256) + uint16(g) + uint16(round(float(b) / 256)) - uint16(32768 - elevationOffset); // elevation offset prevents going into negative numbers.
+          uint16 elevationInMeters = uint16(r) * uint16(256) + uint16(g) + uint16(round(float(b) / 256)) - uint16(32768); // elevation offset prevents going into negative numbers.
           int64 heightmapIndex = tileYIndex * widthInPixels * TILE_SIZE + tileXIndex * TILE_SIZE + y * widthInPixels + x;
           if constexpr (useAutoExposure)
           {
@@ -101,6 +99,8 @@ void downloadHeightmap(HINTERNET internet, const char* outputFilePath)
     }
   }
 
+  char outputFilePath[MAX_PATH];
+  sprintf_s(outputFilePath, "%s.png", outputFileName);
   if (!writePngGrayscaleBigEndian(outputFilePath, reinterpret_cast<byte*>(heightmap.data()), widthInPixels, heightInPixels, 1, 16))
   {
     logError("Failed to write png data.");

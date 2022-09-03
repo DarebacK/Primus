@@ -28,9 +28,9 @@ bool Game::tryInitialize(Frame& firstFrame, D3D11Renderer& renderer)
     return false;
   }
 
-  firstFrame.camera.endPosition.x = currentMap.widthInKm / 2.f;
+  firstFrame.camera.endPosition.x = currentMap.widthInM / 2000.f;
   firstFrame.camera.endPosition.y = currentMap.cameraZoomMax;
-  firstFrame.camera.endPosition.z = currentMap.heightInKm / 2.f;
+  firstFrame.camera.endPosition.z = currentMap.heightInM / 2000.f;
   firstFrame.camera.currentPosition = firstFrame.camera.endPosition;
 
   return true;
@@ -79,9 +79,9 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   else
   {
     const float cameraRightEdge = nextFrame.camera.endPosition.x + cameraEdgeOffsetFromPosition.x;
-    if (cameraRightEdge > currentMap.widthInKm)
+    if (cameraRightEdge > currentMap.widthInM / 1000.f)
     {
-      nextFrame.camera.endPosition.x -= cameraRightEdge - currentMap.widthInKm;
+      nextFrame.camera.endPosition.x -= cameraRightEdge - currentMap.widthInM / 1000.f;
     }
   }
   const float cameraDownEdge = nextFrame.camera.endPosition.z - cameraEdgeOffsetFromPosition.y;
@@ -92,9 +92,9 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   else
   {
     const float cameraUpEdge = nextFrame.camera.endPosition.z + cameraEdgeOffsetFromPosition.y;
-    if (cameraUpEdge > currentMap.heightInKm)
+    if (cameraUpEdge > currentMap.heightInM / 1000.f)
     {
-      nextFrame.camera.endPosition.z -= cameraUpEdge - currentMap.heightInKm;
+      nextFrame.camera.endPosition.z -= cameraUpEdge - currentMap.heightInM / 1000.f;
     }
   }
 

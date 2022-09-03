@@ -5,6 +5,7 @@
 #include "Core/Math.hpp"
 #include "Core/Image.hpp"
 #include "Core/File.hpp"
+#include "Core/Config.hpp"
 
 Heightmap::Heightmap(Heightmap&& other) noexcept
 {
@@ -13,11 +14,6 @@ Heightmap::Heightmap(Heightmap&& other) noexcept
   swap(data, other.data);
   swap(width, other.width);
   swap(height, other.height);
-
-  swap(minElevationInM, other.minElevationInM);
-  swap(maxElevationInM, other.maxElevationInM);
-  swap(minElevationInKm, other.minElevationInKm);
-  swap(maxElevationInKm, other.maxElevationInKm);
 }
 
 Heightmap::~Heightmap()
@@ -44,45 +40,6 @@ bool Heightmap::tryLoad(const wchar_t* mapDirectoryPath)
   width = 2560;
   height = 3072;
 
-  std::atomic<int16> atomicMinElevation = 0;
-  std::atomic<int16> atomicMaxElevation = 0;
-  taskManager.parallelFor(0, height, [this, &atomicMinElevation, &atomicMaxElevation](int64 i, int64 threadIndex) {
-    int16 localMinElevation = std::numeric_limits<int16>::max();
-    int16 localMaxElevation = std::numeric_limits<int16>::min();
-    int16* const elevationDataRow = reinterpret_cast<int16*>(data.data()) + i * width;
-    for (int64 x = 0; x < width; x++)
-    {
-      localMinElevation = std::min(localMinElevation, elevationDataRow[x]);
-      localMaxElevation = std::max(localMaxElevation, elevationDataRow[x]);
-    }
-
-    while (true)
-    {
-      int16 fetchedAtomicMinElevation = atomicMinElevation.load(std::memory_order_relaxed);
-      localMinElevation = std::min(localMinElevation, fetchedAtomicMinElevation);
-      if (atomicMinElevation.compare_exchange_strong(fetchedAtomicMinElevation, localMinElevation))
-      {
-        break;
-      }
-    }
-
-    while (true)
-    {
-      int16 fetchedAtomicMaxElevation = atomicMaxElevation.load(std::memory_order_relaxed);
-      localMaxElevation = std::max(localMaxElevation, fetchedAtomicMaxElevation);
-      if (atomicMaxElevation.compare_exchange_strong(fetchedAtomicMaxElevation, localMaxElevation))
-      {
-        break;
-      }
-    }
-  });
-
-  // TODO: this data should be preprocessed
-  minElevationInM = atomicMinElevation.load(std::memory_order_relaxed);
-  maxElevationInM = atomicMaxElevation.load(std::memory_order_relaxed);
-  minElevationInKm = minElevationInM / 1000.f;
-  maxElevationInKm = maxElevationInM / 1000.f;
-
   return true;
 }
 
@@ -99,6 +56,44 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
 
   wcscpy_s(directoryPath, mapDirectoryPath);
 
+  wchar_t configPath[128];
+  swprintf_s(configPath, L"%ls\\map.ini", mapDirectoryPath);
+  std::vector<byte> mapConfigData;
+  if(!tryReadEntireFile(configPath, mapConfigData))
+  {
+    logError("Failed to read map %ls.ini", configPath);
+    return false;
+  }
+
+  mapConfigData.reserve(mapConfigData.size() + 1);
+  if(!tryParseConfig((char*)mapConfigData.data(), (int64)mapConfigData.size(),
+    [this](const ConfigKeyValueNode& node)
+    {
+      if(node.isKey("minElevationInM"))
+      {
+        minElevationInM = node.toInt();
+      }
+      else if(node.isKey("maxElevationInM"))
+      {
+        maxElevationInM = node.toInt();
+      }
+      else if(node.isKey("widthInM"))
+      {
+        widthInM = node.toInt();
+      }
+      else if(node.isKey("heightInM"))
+      {
+        heightInM = node.toInt();
+      }
+
+      return false;
+    }
+  ))
+  {
+    logError("Failed to parse %ls.", configPath);
+    return false;
+  }
+
   if (!heightmap.tryLoad(mapDirectoryPath))
   {
     return false;
@@ -106,10 +101,11 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
 
   cameraNearPlane = 1.f;
 
-  cameraZoomMin = (heightmap.maxElevationInKm * 5.f) + cameraNearPlane; // TODO: * 5.f due to visual height multiplier. Put it in a map constant buffer and share it with the terrain vertex shader.
+  // TODO: use meters as units in our coordinate system.
+  cameraZoomMin = (maxElevationInM * 0.005f) + cameraNearPlane; // TODO: * 0.005f due to visual height multiplier. Put it in a map constant buffer and share it with the terrain vertex shader.
   const float horizontalFieldOfViewRadians = verticalToHorizontalFieldOfView(verticalFieldOfViewRadians, aspectRatio);
-  const float cameraYToFitMapHorizontally = cotan(horizontalFieldOfViewRadians / 2.f) * (widthInKm / 2.f);
-  const float cameraYToFitMapVertically = cotan(verticalFieldOfViewRadians / 2.f) * (heightInKm / 2.f);
+  const float cameraYToFitMapHorizontally = cotan(horizontalFieldOfViewRadians / 2.f) * (widthInM / 2000.f);
+  const float cameraYToFitMapVertically = cotan(verticalFieldOfViewRadians / 2.f) * (heightInM / 2000.f);
   cameraZoomMax = std::min(cameraYToFitMapHorizontally, cameraYToFitMapVertically);
 
   const float distanceToMaxZoomedOutHorizontalEdge = cameraZoomMax / cos(horizontalFieldOfViewRadians / 2.f);

@@ -265,11 +265,6 @@ static void defineGui()
         case NodeType::Map:
           break;
         case NodeType::Heightmap:
-          if (ImGui::Button("Fix land elevation"))
-          {
-            // Heightmap* heightmap = reinterpret_cast<Heightmap*>(selectedNodeContext);
-            maps[0].tryFixLandElevation();
-          }
           break;
         case NodeType::Colormap:
           break;

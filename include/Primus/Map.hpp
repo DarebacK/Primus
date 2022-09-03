@@ -13,7 +13,6 @@ public:
   Heightmap(Heightmap&& other) noexcept;
   ~Heightmap();
 
-  int16* data = nullptr; // elevation in meters.
   int32 width = 0;
   int32 height = 0;
 
@@ -24,11 +23,14 @@ public:
 
   bool tryLoad(const wchar_t* mapName);
 
+  const int16* getData() const { return (int16*)data.data(); }
   int64 getDataSize() const { return width * height * 2; }
 
 private:
 
   void reset();
+
+  std::vector<byte> data; // elevation in meters
 
 };
 

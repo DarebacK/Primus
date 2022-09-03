@@ -23,6 +23,4 @@ struct EditorMap : public Map
   Colormap colormap;
 
   bool tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio);
-
-  bool tryFixLandElevation();
 };

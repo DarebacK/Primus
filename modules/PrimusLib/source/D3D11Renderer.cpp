@@ -415,7 +415,7 @@ static bool tryInitializeHeightmap(const Map& map)
   };
 
   D3D11_SUBRESOURCE_DATA heightmapTextureData;
-  heightmapTextureData.pSysMem = map.heightmap.data;
+  heightmapTextureData.pSysMem = map.heightmap.getData();
   heightmapTextureData.SysMemPitch = map.heightmap.width * 2;
   heightmapTextureData.SysMemSlicePitch = 0;
 

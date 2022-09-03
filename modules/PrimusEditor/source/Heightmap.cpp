@@ -1,6 +1,7 @@
 #include "Heightmap.hpp"
 
 #include "Core/Image.hpp"
+#include "Core/File.hpp"
 
 #include <vector>
 #include <memory>
@@ -31,7 +32,7 @@ void downloadHeightmap(HINTERNET internet, const char* outputFileName)
   HttpDownloader downloader{ internet, serverUrl };
 
   std::vector<uint16> heightmap;
-  heightmap.resize(tileCount * TILE_SIZE * TILE_SIZE * 2);
+  heightmap.resize(tileCount * TILE_SIZE * TILE_SIZE);
 
   std::vector<byte> contentBuffer;
   uint16 minElevation = std::numeric_limits<uint16>::max();
@@ -72,38 +73,24 @@ void downloadHeightmap(HINTERNET internet, const char* outputFileName)
           uint8 r = *readDataIterator++;
           uint8 g = *readDataIterator++;
           uint8 b = *readDataIterator++;
-          uint16 elevationInMeters = uint16(r) * uint16(256) + uint16(g) + uint16(round(float(b) / 256)) - uint16(32768); // elevation offset prevents going into negative numbers.
+          uint16 elevationInMeters = uint16(r) * uint16(256) + uint16(g) + uint16(round(float(b) / 256)) - uint16(32768);
           int64 heightmapIndex = tileYIndex * widthInPixels * TILE_SIZE + tileXIndex * TILE_SIZE + y * widthInPixels + x;
-          if constexpr (useAutoExposure)
-          {
-            minElevation = std::min(minElevation, elevationInMeters);
-            maxElevation = std::max(maxElevation, elevationInMeters);
-            heightmap[heightmapIndex] = elevationInMeters;
-          }
-          else
-          {
-            heightmap[heightmapIndex] = nativeToBigEndian(elevationInMeters);
-          }
+
+          minElevation = std::min(minElevation, elevationInMeters);
+          maxElevation = std::max(maxElevation, elevationInMeters);
+          heightmap[heightmapIndex] = elevationInMeters;
+
           readDataIterator++; // skip alpha, it has no information anyway.
         }
       }
     }
   }
 
-  if constexpr (useAutoExposure)
+  wchar_t outputFilePath[MAX_PATH];
+  swprintf_s(outputFilePath, L"%S.s16", outputFileName);
+  if (!tryWriteFile(outputFilePath, (const byte*)heightmap.data(), heightmap.size() * sizeof(int16)))
   {
-    const float multiplier = std::numeric_limits<uint16>::max() / float(maxElevation - minElevation);
-    for (uint16& pixel : heightmap)
-    {
-      pixel = nativeToBigEndian(uint16((pixel - minElevation) * multiplier));
-    }
-  }
-
-  char outputFilePath[MAX_PATH];
-  sprintf_s(outputFilePath, "%s.png", outputFileName);
-  if (!writePngGrayscaleBigEndian(outputFilePath, reinterpret_cast<byte*>(heightmap.data()), widthInPixels, heightInPixels, 1, 16))
-  {
-    logError("Failed to write png data.");
+    logError("Failed to write heightmap data to a file.");
     return;
   }
 }

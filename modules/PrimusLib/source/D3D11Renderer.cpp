@@ -744,7 +744,7 @@ void D3D11Renderer::setBackBufferRenderTarget()
 
 void D3D11Renderer::endRender()
 {
-  TRACE_SCOPE("Present frame");
+  TRACE_SCOPE("presentFrame");
 
   UINT presentFlags = 0;
   swapChain->Present(1, presentFlags);

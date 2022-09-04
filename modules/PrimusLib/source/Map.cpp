@@ -65,7 +65,6 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
     return false;
   }
 
-  mapConfigData.reserve(mapConfigData.size() + 1);
   if(!tryParseConfig((char*)mapConfigData.data(), (int64)mapConfigData.size(),
     [this](const ConfigKeyValueNode& node)
     {

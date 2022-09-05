@@ -35,18 +35,18 @@ struct Map
   wchar_t name[64];
   wchar_t directoryPath[128];
 
-  int64 widthInM = 1565430; // TODO: read these values from map.ini. Maybe using libconfini?
-  int64 heightInM = 1878516;
+  int64 widthInM = 0;
+  int64 heightInM = 0;
 
   int16 minElevationInM = 0;
   int16 maxElevationInM = 0;
 
   Heightmap heightmap;
 
-  float cameraZoomMin;
-  float cameraZoomMax;
-  float cameraNearPlane;
-  float cameraFarPlane;
+  float cameraZoomMin = 0.f;
+  float cameraZoomMax = 0.f;
+  float cameraNearPlane = 0.f;
+  float cameraFarPlane = 0.f;
 
   bool tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio);
 };

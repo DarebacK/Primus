@@ -501,14 +501,14 @@ static bool tryInitializeHeightmap(const Map& map)
   return true;
 }
 
-struct createColormapFromDDSTaskData
+struct CreateColormapFromDDSTaskData
 {
   std::vector<byte> dds;
 };
-DEFINE_TASK_BEGIN(createColormapFromDDS, createColormapFromDDSTaskData)
+DEFINE_TASK_BEGIN(createColormapFromDDS, CreateColormapFromDDSTaskData)
 {
   // TODO: do the guard for every data by default in DEFINE_TASK_BEGIN ?
-  std::unique_ptr<createColormapFromDDSTaskData> taskDataGuard{ static_cast<createColormapFromDDSTaskData*>(&taskData) };
+  std::unique_ptr<CreateColormapFromDDSTaskData> taskDataGuard{ static_cast<CreateColormapFromDDSTaskData*>(&taskData) };
 
   createTextureFromDDS(taskData.dds.data(), taskData.dds.size(), (ID3D11Resource**)&colormapTexture, &colormapTextureView);
 
@@ -530,7 +530,7 @@ static bool tryInitializeColormap(const Map& map)
   readFileAsync(filePath, [](ReadFileAsyncResult& result) 
     {
       // TODO: error handling
-      createColormapFromDDSTaskData* taskData = new createColormapFromDDSTaskData{std::move(result.data)};
+      CreateColormapFromDDSTaskData* taskData = new CreateColormapFromDDSTaskData{std::move(result.data)};
       taskManager.schedule(createColormapFromDDS, taskData, ThreadType::Main);
     }
   );

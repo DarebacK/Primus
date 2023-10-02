@@ -57,11 +57,11 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
   wcscpy_s(directoryPath, mapDirectoryPath);
 
   wchar_t configPath[128];
-  swprintf_s(configPath, L"%ls\\map.ini", mapDirectoryPath);
+  swprintf_s(configPath, L"%ls/map.ini", mapDirectoryPath);
   std::vector<byte> mapConfigData;
   if(!tryReadEntireFile(configPath, mapConfigData))
   {
-    logError("Failed to read map %ls.ini", configPath);
+    logError("Failed to read map %ls", configPath);
     return false;
   }
 

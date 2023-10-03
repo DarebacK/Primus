@@ -3,7 +3,7 @@
 #include "Primus/Primus.hpp"
 #include "Primus/Map.hpp"
 
-static constexpr float cameraMoveSpeed = 0.04f;
+static constexpr float cameraMoveSpeed = 2.5f;
 static constexpr float cameraZoomSpeed = 0.12f;
 
 #define MAPS_DIRECTORY ASSET_DIRECTORY L"/maps"
@@ -44,7 +44,7 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   // i.e. how many meters/units it is from camera center to the intersection of it's frustum with the map plane.
   float cameraEdgeVerticalOffsetFromPosition = tan(verticalFieldOfViewRadians / 2.f) * nextFrame.camera.endPosition.y;
 
-  const float currentCameraSpeed = cameraMoveSpeed * cameraEdgeVerticalOffsetFromPosition;
+  const float currentCameraSpeed = cameraMoveSpeed * cameraEdgeVerticalOffsetFromPosition * nextFrame.deltaTime;
   nextFrame.camera.endPosition.x += currentCameraSpeed * nextFrame.input.keyboard.d.isDown - currentCameraSpeed * nextFrame.input.keyboard.a.isDown;
   nextFrame.camera.endPosition.z += currentCameraSpeed * nextFrame.input.keyboard.w.isDown - currentCameraSpeed * nextFrame.input.keyboard.s.isDown;
 

@@ -70,11 +70,11 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
     {
       if(node.isKey("minElevationInM"))
       {
-        minElevationInM = node.toInt();
+        minElevationInM = int16(node.toInt());
       }
       else if(node.isKey("maxElevationInM"))
       {
-        maxElevationInM = node.toInt();
+        maxElevationInM = int16(node.toInt());
       }
       else if(node.isKey("widthInM"))
       {

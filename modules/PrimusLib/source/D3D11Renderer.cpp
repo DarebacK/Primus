@@ -638,7 +638,7 @@ static void renderTerrain(const Frame& frame, const Map& map)
 
   D3D11_MAPPED_SUBRESOURCE mappedConstantBuffer;
   context->Map(terrainConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedConstantBuffer);
-  const Mat4f transform = Mat4f::scale(map.widthInM / 1000.f, 1.f, map.heightInM / 1000.f) * frame.camera.viewProjection;
+  const Mat4f transform = Mat4x3f::scale(map.widthInM / 1000.f, 1.f, map.heightInM / 1000.f) * frame.camera.viewProjection;
   memcpy(mappedConstantBuffer.pData, &transform, sizeof(transform));
   context->Unmap(terrainConstantBuffer, 0);
 

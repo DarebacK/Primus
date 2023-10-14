@@ -145,7 +145,11 @@ int WINAPI WinMain(
 
   FileSystemGuard fileSystemGuard;
 
-  initializeAssetSystem();
+  if (!tryInitializeAssetSystem())
+  {
+    window.showErrorMessageBox(L"Failed to initialize asset system", L"Fatal error");
+    return -1;
+  }
 
   D3D11Renderer renderer;
   if (!renderer.tryInitialize(window)) {

@@ -57,7 +57,7 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
   wcscpy_s(directoryPath, mapDirectoryPath);
 
   wchar_t configPath[128];
-  swprintf_s(configPath, L"%ls/map.ini", mapDirectoryPath);
+  swprintf_s(configPath, L"%ls/map.cfg", mapDirectoryPath);
   std::vector<byte> mapConfigData;
   if(!tryReadEntireFile(configPath, mapConfigData))
   {

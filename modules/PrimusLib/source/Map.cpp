@@ -57,7 +57,7 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
   TRACE_SCOPE();
 
   wcscpy_s(directoryPath, mapDirectoryPath);
-  AssetDirectoryRef assetDirectory = loadAssetDirectory(directoryPath);
+  AssetDirectoryRef assetDirectory{ directoryPath };
 
   // TODO: Remove this after manual asset loading is replaced.
   int64 directoryPathLength = combine(ASSET_DIRECTORY, L'/', mapDirectoryPath, directoryPath);

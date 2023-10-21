@@ -6,7 +6,7 @@
 static constexpr float cameraMoveSpeed = 2.5f;
 static constexpr float cameraZoomSpeed = 0.12f;
 
-#define MAPS_DIRECTORY ASSET_DIRECTORY L"/maps"
+#define MAPS_DIRECTORY L"maps"
 
 Map currentMap;
 

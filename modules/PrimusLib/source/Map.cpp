@@ -6,6 +6,8 @@
 #include "Core/Image.hpp"
 #include "Core/File.hpp"
 #include "Core/Config.hpp"
+#include "Core/Asset.hpp"
+#include "Core/String.hpp"
 
 Heightmap::Heightmap(Heightmap&& other) noexcept
 {
@@ -55,9 +57,16 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
   TRACE_SCOPE();
 
   wcscpy_s(directoryPath, mapDirectoryPath);
+  AssetDirectoryRef assetDirectory = loadAssetDirectory(directoryPath);
+
+  // TODO: Remove this after manual asset loading is replaced.
+  int64 directoryPathLength = combine(ASSET_DIRECTORY, L'/', mapDirectoryPath, directoryPath);
+  directoryPath[directoryPathLength] = L'\0';
+
+  // TODO: replace manual asset loading with directory
 
   wchar_t configPath[128];
-  swprintf_s(configPath, L"%ls/map.cfg", mapDirectoryPath);
+  swprintf_s(configPath, L"%ls/map.cfg", directoryPath);
   std::vector<byte> mapConfigData;
   if(!tryReadEntireFile(configPath, mapConfigData))
   {
@@ -93,7 +102,7 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
     return false;
   }
 
-  if (!heightmap.tryLoad(mapDirectoryPath))
+  if (!heightmap.tryLoad(directoryPath))
   {
     return false;
   }

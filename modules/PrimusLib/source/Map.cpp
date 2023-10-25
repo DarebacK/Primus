@@ -65,6 +65,9 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
 
   // TODO: replace manual asset loading with directory
 
+  // TODO: Get rid of passing the file extension, it's an implementation detail after all.
+  Ref<Config> config{ assetDirectory.findAsset<Config>(L"map.cfg") };
+
   wchar_t configPath[128];
   swprintf_s(configPath, L"%ls/map.cfg", directoryPath);
   std::vector<byte> mapConfigData;

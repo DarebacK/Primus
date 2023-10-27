@@ -63,48 +63,14 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
   int64 directoryPathLength = combine(ASSET_DIRECTORY, L'/', mapDirectoryPath, directoryPath);
   directoryPath[directoryPathLength] = L'\0';
 
-  // TODO: replace manual asset loading with directory
-
   // TODO: Get rid of passing the file extension, it's an implementation detail after all.
   Ref<Config> config{ assetDirectory.findAsset<Config>(L"map.cfg") };
+  minElevationInM = config->getInt("minElevationInM");
+  maxElevationInM = config->getInt("maxElevationInM");
+  widthInM = config->getInt("widthInM");
+  heightInM = config->getInt("heightInM");
 
-  wchar_t configPath[128];
-  swprintf_s(configPath, L"%ls/map.cfg", directoryPath);
-  std::vector<byte> mapConfigData;
-  if(!tryReadEntireFile(configPath, mapConfigData))
-  {
-    logError("Failed to read map %ls", configPath);
-    return false;
-  }
-
-  if(!tryParseConfig((char*)mapConfigData.data(), (int64)mapConfigData.size(),
-    [this](const ConfigKeyValueNode& node)
-    {
-      if(node.isKey("minElevationInM"))
-      {
-        minElevationInM = int16(node.toInt());
-      }
-      else if(node.isKey("maxElevationInM"))
-      {
-        maxElevationInM = int16(node.toInt());
-      }
-      else if(node.isKey("widthInM"))
-      {
-        widthInM = node.toInt();
-      }
-      else if(node.isKey("heightInM"))
-      {
-        heightInM = node.toInt();
-      }
-
-      return false;
-    }
-  ))
-  {
-    logError("Failed to parse %ls.", configPath);
-    return false;
-  }
-
+  // TODO: replace manual asset loading with directory
   if (!heightmap.tryLoad(directoryPath))
   {
     return false;

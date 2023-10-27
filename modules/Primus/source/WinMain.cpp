@@ -1,6 +1,7 @@
 #define DAR_MODULE_NAME "WinMain"
 
 #include <stdio.h>
+#include <filesystem>
 
 #include "Core/Core.hpp"
 #include "Core/Math.hpp"
@@ -207,6 +208,7 @@ int WINAPI WinMain(
 
   // TODO: ensure the folder is created
   // TODO: stop when actually loaded
+  std::filesystem::create_directory("profiling");
   TRACE_STOP_CAPTURE("profiling\\GameLoad.opt");
 
   return 0;

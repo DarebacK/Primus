@@ -9,49 +9,6 @@
 #include "Core/Asset.hpp"
 #include "Core/String.hpp"
 
-Heightmap::Heightmap(Heightmap&& other) noexcept
-{
-  using std::swap;
-
-  swap(data, other.data);
-  swap(width, other.width);
-  swap(height, other.height);
-}
-
-Heightmap::~Heightmap()
-{
-  reset();
-}
-
-bool Heightmap::tryLoad(const wchar_t* mapDirectoryPath)
-{
-  TRACE_SCOPE();
-
-  reset();
-
-  wchar_t mapFilePath[128];
-  swprintf_s(mapFilePath, L"%ls\\heightmap.s16", mapDirectoryPath);
-
-  if (!tryReadEntireFile(mapFilePath, data))
-  {
-    logError("Failed to read heightmap file %ls", mapFilePath);
-    return false;
-  }
-
-  // TODO: read from a meta file
-  width = 2560;
-  height = 3072;
-
-  return true;
-}
-
-void Heightmap::reset()
-{
-  data.clear();
-  width = 0;
-  height = 0;
-}
-
 bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio)
 {
   TRACE_SCOPE();
@@ -64,17 +21,13 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
   directoryPath[directoryPathLength] = L'\0';
 
   // TODO: Get rid of passing the file extension, it's an implementation detail after all.
-  Ref<Config> config{ assetDirectory.findAsset<Config>(L"map.cfg") };
+  Ref<Config> config = assetDirectory.findAsset<Config>(L"map.cfg");
   minElevationInM = config->getInt("minElevationInM");
   maxElevationInM = config->getInt("maxElevationInM");
   widthInM = config->getInt("widthInM");
   heightInM = config->getInt("heightInM");
 
-  // TODO: replace manual asset loading with directory
-  if (!heightmap.tryLoad(directoryPath))
-  {
-    return false;
-  }
+  heightmap = assetDirectory.findAsset<Texture2D>(L"heightmap.s16");
 
   cameraNearPlane = 1.f;
 

@@ -57,8 +57,6 @@ namespace
   CComPtr<ID2D1Device1> d2Device = nullptr;
   CComPtr<ID2D1DeviceContext1> d2Context = nullptr;
 
-  CComPtr<ID3D11ShaderResourceView> heightmapTextureView;
-  CComPtr<ID3D11Texture2D> heightmapTexture;
   CComPtr<ID3D11ShaderResourceView> colormapTextureView;
   CComPtr<ID3D11Texture2D> colormapTexture;
   CComPtr<ID3D11SamplerState> colormapSampler;
@@ -401,50 +399,8 @@ static bool tryInitializeHeightmap(const Map& map)
 {
   TRACE_SCOPE();
 
-  {
-    TRACE_SCOPE("heightmapTextureCreation");
-
-    const D3D11_TEXTURE2D_DESC heightmapTextureDescription = {
-      UINT(map.heightmap.width),
-      UINT(map.heightmap.height),
-      1,
-      1,
-      DXGI_FORMAT_R16_SINT,
-      {1, 0},
-      D3D11_USAGE_IMMUTABLE,
-      D3D11_BIND_SHADER_RESOURCE,
-      0,
-      0
-    };
-
-    D3D11_SUBRESOURCE_DATA heightmapTextureData;
-    heightmapTextureData.pSysMem = map.heightmap.getData();
-    heightmapTextureData.SysMemPitch = map.heightmap.width * 2;
-    heightmapTextureData.SysMemSlicePitch = 0;
-
-    heightmapTexture.Release();
-    if (FAILED(device->CreateTexture2D(&heightmapTextureDescription, &heightmapTextureData, &heightmapTexture)))
-    {
-      logError("Failed to create heightmap texture.");
-      return false;
-    }
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC heightmapShaderResourceViewDescription;
-    heightmapShaderResourceViewDescription.Format = heightmapTextureDescription.Format;
-    heightmapShaderResourceViewDescription.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    heightmapShaderResourceViewDescription.Texture2D.MostDetailedMip = 0;
-    heightmapShaderResourceViewDescription.Texture2D.MipLevels = 1;
-
-    heightmapTextureView.Release();
-    if (FAILED(device->CreateShaderResourceView(heightmapTexture, &heightmapShaderResourceViewDescription, &heightmapTextureView)))
-    {
-      logError("Failed to create heightmap shader resource view.");
-      return false;
-    }
-  }
-
-  const uint32 indexCountPerRow = uint32(map.heightmap.width * 2);
-  const uint32 rowCount = map.heightmap.height - 1;
+  const uint32 indexCountPerRow = uint32(map.heightmap->width * 2);
+  const uint32 rowCount = map.heightmap->height - 1;
   const uint32 degenerateIndexCount = (rowCount - 1) * 2; // row 0 doesn't need degenerate indices. 
   terrainIndexBufferLength = indexCountPerRow * rowCount + degenerateIndexCount;
 
@@ -454,26 +410,26 @@ static bool tryInitializeHeightmap(const Map& map)
 
     indices.resize(terrainIndexBufferLength);
     taskManager.parallelFor(0, rowCount - 1, [&heightmap = map.heightmap, indicesData = indices.data()](int64 i, int64 threadIndex) {
-      const uint32 rowIndex = uint32(heightmap.height - 2 - i); // Start from bottom for clockwise winding order.
-      const uint32 baseUpVertexIndex = rowIndex * heightmap.width;
-      const uint32 baseDownVertexIndex = (rowIndex + 1) * heightmap.width;
-      const uint32 indexCountPerRow = uint32(heightmap.width * 2 + 2);
+      const uint32 rowIndex = uint32(heightmap->height - 2 - i); // Start from bottom for clockwise winding order.
+      const uint32 baseUpVertexIndex = rowIndex * heightmap->width;
+      const uint32 baseDownVertexIndex = (rowIndex + 1) * heightmap->width;
+      const uint32 indexCountPerRow = uint32(heightmap->width * 2 + 2);
       uint32* indexBufferWriteIterator = indicesData + i * indexCountPerRow;
-      for (int32 x = 0; x < heightmap.width; x++)
+      for (int32 x = 0; x < heightmap->width; x++)
       {
         *(indexBufferWriteIterator++) = baseDownVertexIndex + x;
         *(indexBufferWriteIterator++) = baseUpVertexIndex + x;
       }
 
       // Degenerate indices to prevent face winding swap.
-      *(indexBufferWriteIterator++) = baseUpVertexIndex + (heightmap.width - 1);
+      *(indexBufferWriteIterator++) = baseUpVertexIndex + (heightmap->width - 1);
       *(indexBufferWriteIterator) = baseUpVertexIndex;
     });
     // top most row
     const uint32 baseUpVertexIndex = 0;
-    const uint32 baseDownVertexIndex = map.heightmap.width;
+    const uint32 baseDownVertexIndex = map.heightmap->width;
     uint32* indexBufferWriteIterator = indices.data() + (rowCount - 1) * (indexCountPerRow + 2);
-    for (int32 x = 0; x < map.heightmap.width; x++)
+    for (int32 x = 0; x < map.heightmap->width; x++)
     {
       *(indexBufferWriteIterator++) = baseDownVertexIndex + x;
       *(indexBufferWriteIterator++) = baseUpVertexIndex + x;
@@ -630,7 +586,7 @@ static void renderTerrain(const Frame& frame, const Map& map)
 
   context->VSSetShader(TerrainVertexShader, nullptr, 0);
   context->VSSetConstantBuffers(0, 1, &terrainConstantBuffer.p);
-  context->VSSetShaderResources(0, 1, &heightmapTextureView.p);
+  context->VSSetShaderResources(0, 1, &map.heightmap->view.p);
 
   context->PSSetShader(TerrainPixelShader, nullptr, 0);
   context->PSSetShaderResources(0, 1, &colormapTextureView.p);

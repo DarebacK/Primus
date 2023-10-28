@@ -9,7 +9,6 @@
 struct Map
 {
   wchar_t name[64];
-  wchar_t directoryPath[128];
 
   int64 widthInM = 0;
   int64 heightInM = 0;
@@ -18,6 +17,7 @@ struct Map
   int16 maxElevationInM = 0;
 
   Ref<Texture2D> heightmap;
+  Ref<Texture2D> colormap;
 
   float cameraZoomMin = 0.f;
   float cameraZoomMax = 0.f;

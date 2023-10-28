@@ -57,8 +57,6 @@ namespace
   CComPtr<ID2D1Device1> d2Device = nullptr;
   CComPtr<ID2D1DeviceContext1> d2Context = nullptr;
 
-  CComPtr<ID3D11ShaderResourceView> colormapTextureView;
-  CComPtr<ID3D11Texture2D> colormapTexture;
   CComPtr<ID3D11SamplerState> colormapSampler;
   constexpr D3D11_SAMPLER_DESC colormapSamplerDescription = {
     D3D11_FILTER_MIN_MAG_MIP_LINEAR,
@@ -457,39 +455,16 @@ static bool tryInitializeHeightmap(const Map& map)
   return true;
 }
 
-struct CreateColormapFromDDSTaskData
-{
-  std::vector<byte> dds;
-};
-DEFINE_TASK_BEGIN(createColormapFromDDS, CreateColormapFromDDSTaskData)
-{
-  // TODO: do the guard for every data by default in DEFINE_TASK_BEGIN ?
-  std::unique_ptr<CreateColormapFromDDSTaskData> taskDataGuard{ static_cast<CreateColormapFromDDSTaskData*>(&taskData) };
-
-  createTextureFromDDS(taskData.dds.data(), taskData.dds.size(), (ID3D11Resource**)&colormapTexture, &colormapTextureView);
-
-  colormapSampler.Release();
-  if (FAILED(device->CreateSamplerState(&colormapSamplerDescription, &colormapSampler)))
-  {
-    logError("Failed to create heightmap texture sampler.");
-  }
-}
-DEFINE_TASK_END
-
 static bool tryInitializeColormap(const Map& map)
 {
   TRACE_SCOPE();
 
-  wchar_t filePath[256];
-  wsprintfW(filePath, L"%ls\\colormap.dds", map.directoryPath);
-
-  readFileAsync(filePath, [](ReadFileAsyncResult& result) 
-    {
-      // TODO: error handling
-      CreateColormapFromDDSTaskData* taskData = new CreateColormapFromDDSTaskData{std::move(result.data)};
-      taskManager.schedule(createColormapFromDDS, taskData, ThreadType::Main);
-    }
-  );
+  colormapSampler.Release();
+  if(FAILED(device->CreateSamplerState(&colormapSamplerDescription, &colormapSampler)))
+  {
+    logError("Failed to create colormap texture sampler.");
+    return false;
+  }
 
   // TODO: get rid of boolean return as this is now async.
   return true;
@@ -572,12 +547,6 @@ static void drawDebugText(const Frame& frameState)
 
 static void renderTerrain(const Frame& frame, const Map& map)
 {
-  // TODO: don't render any part of the map until it's fully loaded.
-  if (!colormapTextureView)
-  {
-    return;
-  }
-
   TRACE_SCOPE();
 
   context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
@@ -589,7 +558,7 @@ static void renderTerrain(const Frame& frame, const Map& map)
   context->VSSetShaderResources(0, 1, &map.heightmap->view.p);
 
   context->PSSetShader(TerrainPixelShader, nullptr, 0);
-  context->PSSetShaderResources(0, 1, &colormapTextureView.p);
+  context->PSSetShaderResources(0, 1, &map.colormap->view.p);
   context->PSSetSamplers(0, 1, &colormapSampler.p);
 
   D3D11_MAPPED_SUBRESOURCE mappedConstantBuffer;

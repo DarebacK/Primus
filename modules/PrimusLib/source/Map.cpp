@@ -13,12 +13,7 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
 {
   TRACE_SCOPE();
 
-  wcscpy_s(directoryPath, mapDirectoryPath);
-  AssetDirectoryRef assetDirectory{ directoryPath };
-
-  // TODO: Remove this after manual asset loading is replaced.
-  int64 directoryPathLength = combine(ASSET_DIRECTORY, L'/', mapDirectoryPath, directoryPath);
-  directoryPath[directoryPathLength] = L'\0';
+  AssetDirectoryRef assetDirectory{ mapDirectoryPath };
 
   // TODO: Get rid of passing the file extension, it's an implementation detail after all.
   Ref<Config> config = assetDirectory.findAsset<Config>(L"map.cfg");
@@ -28,6 +23,7 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
   heightInM = config->getInt("heightInM");
 
   heightmap = assetDirectory.findAsset<Texture2D>(L"heightmap.s16");
+  colormap = assetDirectory.findAsset<Texture2D>(L"colormap.dds");
 
   cameraNearPlane = 1.f;
 

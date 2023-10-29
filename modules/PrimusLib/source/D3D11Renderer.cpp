@@ -193,68 +193,74 @@ bool D3D11Renderer::tryInitialize(HWND window)
 {
   TRACE_SCOPE();
 
-  // DEVICE
-  UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-#ifdef DAR_DEBUG
-  createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif
-  D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1 };
-  if (FAILED(D3D11CreateDevice(
-    NULL,
-    D3D_DRIVER_TYPE_HARDWARE,
-    NULL,
-    createDeviceFlags,
-    featureLevels,
-    arrayLength(featureLevels),
-    D3D11_SDK_VERSION,
-    &device,
-    &featureLevel,
-    &context
-  ))) {
-    logError("Failed to create D3D11 device");
-    return false;
+  {
+    // DEVICE
+    TRACE_SCOPE("createDevice");
+    UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+    #ifdef DAR_DEBUG
+    createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+    #endif
+    D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1 };
+    if(FAILED(D3D11CreateDevice(
+      NULL,
+      D3D_DRIVER_TYPE_HARDWARE,
+      NULL,
+      createDeviceFlags,
+      featureLevels,
+      arrayLength(featureLevels),
+      D3D11_SDK_VERSION,
+      &device,
+      &featureLevel,
+      &context
+    ))) {
+      logError("Failed to create D3D11 device");
+      return false;
+    }
   }
 
 #ifdef DAR_DEBUG
   device->QueryInterface(IID_PPV_ARGS(&debug));
 #endif
 
-  // SWAPCHAIN
   CComPtr<IDXGIDevice> dxgiDevice;
   if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&dxgiDevice)))) {
     if (SUCCEEDED(dxgiDevice->GetParent(IID_PPV_ARGS(&dxgiAdapter)))) {
       CComPtr<IDXGIFactory2> dxgiFactory;
       if (SUCCEEDED(dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory)))) {
-        swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        swapChainDesc.SampleDesc.Count = 1;
-        swapChainDesc.SampleDesc.Quality = 0;
-        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        swapChainDesc.BufferCount = 2;
-        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-        swapChainDesc.Flags = 0;
-        dxgiFactory->CreateSwapChainForHwnd(dxgiDevice, window, &swapChainDesc, NULL, NULL, &swapChain);
-        if (!swapChain) {
-          // DXGI_SWAP_EFFECT_FLIP_DISCARD may not be supported on this OS. Try legacy DXGI_SWAP_EFFECT_DISCARD.
-          swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-          dxgiFactory->CreateSwapChainForHwnd(dxgiDevice, window, &swapChainDesc, NULL, NULL, &swapChain);
-          if (!swapChain) {
-            logError("Failed to create swapChain.");
-            return false;
-          }
-        }
-        swapChain->GetDesc1(&swapChainDesc);
-
-        CComPtr<ID3D11Texture2D> backBuffer = nullptr;
-        if (FAILED(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)))) {
-          logError("Failed to create back buffer render target view.");
-        }
-        else
         {
-          backBufferRenderTargetView = createRenderTargetView(backBuffer, swapChainDesc.Format);
-        }
+          // SWAPCHAIN
+          TRACE_SCOPE("createSwapchain");
+          swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+          swapChainDesc.SampleDesc.Count = 1;
+          swapChainDesc.SampleDesc.Quality = 0;
+          swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+          swapChainDesc.BufferCount = 2;
+          swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+          swapChainDesc.Flags = 0;
+          dxgiFactory->CreateSwapChainForHwnd(dxgiDevice, window, &swapChainDesc, NULL, NULL, &swapChain);
+          if(!swapChain) {
+            // DXGI_SWAP_EFFECT_FLIP_DISCARD may not be supported on this OS. Try legacy DXGI_SWAP_EFFECT_DISCARD.
+            swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+            dxgiFactory->CreateSwapChainForHwnd(dxgiDevice, window, &swapChainDesc, NULL, NULL, &swapChain);
+            if(!swapChain) {
+              logError("Failed to create swapChain.");
+              return false;
+            }
+          }
+          swapChain->GetDesc1(&swapChainDesc);
 
-        if (FAILED(dxgiFactory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER))) {
-          logError("Failed to make window association to ignore alt enter.");
+          CComPtr<ID3D11Texture2D> backBuffer = nullptr;
+          if(FAILED(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)))) {
+            logError("Failed to create back buffer render target view.");
+          }
+          else
+          {
+            backBufferRenderTargetView = createRenderTargetView(backBuffer, swapChainDesc.Format);
+          }
+
+          if(FAILED(dxgiFactory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER))) {
+            logError("Failed to make window association to ignore alt enter.");
+          }
         }
       }
       else {
@@ -271,21 +277,24 @@ bool D3D11Renderer::tryInitialize(HWND window)
       return false;
     }
 
-    // DirectWrite and Direct2D
-    if (SUCCEEDED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory2), (IUnknown**)&dwriteFactory))) {
-      D2D1_FACTORY_OPTIONS options;
-#ifdef DAR_DEBUG
-      options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
-#else
-      options.debugLevel = D2D1_DEBUG_LEVEL_NONE;
-#endif
-      CComPtr<ID2D1Factory2> d2dFactory;
-      if (SUCCEEDED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory2), &options, (void**)&d2dFactory))) {
-        if (FAILED(d2dFactory->CreateDevice(dxgiDevice, &d2Device))) {
-          logError("Failed to create ID2D1Device");
-        }
-        if (FAILED(d2Device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &d2Context))) {
-          logError("Failed to create ID2D1DeviceContext");
+    {
+      TRACE_SCOPE("initializeDirectWriteAndDirect2D");
+      // DirectWrite and Direct2D
+      if(SUCCEEDED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory2), (IUnknown**)&dwriteFactory))) {
+        D2D1_FACTORY_OPTIONS options;
+        #ifdef DAR_DEBUG
+        options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+        #else
+        options.debugLevel = D2D1_DEBUG_LEVEL_NONE;
+        #endif
+        CComPtr<ID2D1Factory2> d2dFactory;
+        if(SUCCEEDED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory2), &options, (void**)&d2dFactory))) {
+          if(FAILED(d2dFactory->CreateDevice(dxgiDevice, &d2Device))) {
+            logError("Failed to create ID2D1Device");
+          }
+          if(FAILED(d2Device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &d2Context))) {
+            logError("Failed to create ID2D1DeviceContext");
+          }
         }
       }
     }

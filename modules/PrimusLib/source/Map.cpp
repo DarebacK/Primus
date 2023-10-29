@@ -15,6 +15,9 @@ bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadi
 
   AssetDirectoryRef assetDirectory{ mapDirectoryPath };
 
+  // TODO: This sleep just makes "sure" that Config is initialized when we trying to look for it. Instead continue with the asynchronization here: make a map load task that has prerequisite of the assetDirectory finished loading event.
+  Sleep(100);
+
   // TODO: Get rid of passing the file extension, it's an implementation detail after all.
   Ref<Config> config = assetDirectory.findAsset<Config>(L"map.cfg");
   minElevationInM = config->getInt("minElevationInM");

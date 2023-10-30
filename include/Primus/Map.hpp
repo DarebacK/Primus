@@ -10,6 +10,8 @@ struct Map
 {
   wchar_t name[64];
 
+  AssetDirectoryRef assetDirectory;
+
   int64 widthInM = 0;
   int64 heightInM = 0;
 
@@ -24,5 +26,5 @@ struct Map
   float cameraNearPlane = 0.f;
   float cameraFarPlane = 0.f;
 
-  bool tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio);
+  Ref<TaskEvent> initializeAsync(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio);
 };

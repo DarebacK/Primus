@@ -9,37 +9,59 @@
 #include "Core/Asset.hpp"
 #include "Core/String.hpp"
 
-bool Map::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio)
+struct InitializeMapTaskData
+{
+  Map* map = nullptr;
+  Ref<Config> config;
+  float verticalFieldOfViewRadians = 0.f;
+  float aspectRatio = 0.f;
+};
+
+DEFINE_TASK_BEGIN(initializeMap, InitializeMapTaskData)
+{
+  const Ref<Config>& config = taskData.config;
+  Map& map = *taskData.map;
+  const float verticalFieldOfViewRadians = taskData.verticalFieldOfViewRadians;
+  const float aspectRatio = taskData.aspectRatio;
+
+  map.minElevationInM = config->getInt("minElevationInM");
+  map.maxElevationInM = config->getInt("maxElevationInM");
+  map.widthInM = config->getInt("widthInM");
+  map.heightInM = config->getInt("heightInM");
+
+  map.cameraNearPlane = 1.f;
+
+  // TODO: use meters as units in our coordinate system.
+  map.cameraZoomMin = (map.maxElevationInM * 0.005f) + map.cameraNearPlane; // TODO: * 0.005f due to visual height multiplier. Put it in a map constant buffer and share it with the terrain vertex shader.
+  const float horizontalFieldOfViewRadians = verticalToHorizontalFieldOfView(verticalFieldOfViewRadians, aspectRatio);
+  const float cameraYToFitMapHorizontally = cotan(horizontalFieldOfViewRadians / 2.f) * (map.widthInM / 2000.f);
+  const float cameraYToFitMapVertically = cotan(verticalFieldOfViewRadians / 2.f) * (map.heightInM / 2000.f);
+  map.cameraZoomMax = std::min(cameraYToFitMapHorizontally, cameraYToFitMapVertically);
+
+  const float distanceToMaxZoomedOutHorizontalEdge = map.cameraZoomMax / cos(horizontalFieldOfViewRadians / 2.f);
+  const float distanceToMaxZoomedOutVerticalEdge = map.cameraZoomMax / cos(verticalFieldOfViewRadians / 2.f);
+  map.cameraFarPlane = std::max(distanceToMaxZoomedOutHorizontalEdge, distanceToMaxZoomedOutVerticalEdge); // TODO: adjust far clipping plane distance according to min elevation + current zoom level.
+}
+DEFINE_TASK_END
+
+Ref<TaskEvent> Map::initializeAsync(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio)
 {
   TRACE_SCOPE();
 
-  AssetDirectoryRef assetDirectory{ mapDirectoryPath };
-
-  // TODO: This sleep just makes "sure" that Config is initialized when we trying to look for it. Instead continue with the asynchronization here: make a map load task that has prerequisite of the assetDirectory finished loading event.
-  Sleep(100);
+  assetDirectory.initialize(mapDirectoryPath);
 
   // TODO: Get rid of passing the file extension, it's an implementation detail after all.
-  Ref<Config> config = assetDirectory.findAsset<Config>(L"map.cfg");
-  minElevationInM = config->getInt("minElevationInM");
-  maxElevationInM = config->getInt("maxElevationInM");
-  widthInM = config->getInt("widthInM");
-  heightInM = config->getInt("heightInM");
-
   heightmap = assetDirectory.findAsset<Texture2D>(L"heightmap.s16");
   colormap = assetDirectory.findAsset<Texture2D>(L"colormap.dds");
 
-  cameraNearPlane = 1.f;
+  Ref<Config> config = assetDirectory.findAsset<Config>(L"map.cfg");
+  ensureTrue(config.isValid(), {});
 
-  // TODO: use meters as units in our coordinate system.
-  cameraZoomMin = (maxElevationInM * 0.005f) + cameraNearPlane; // TODO: * 0.005f due to visual height multiplier. Put it in a map constant buffer and share it with the terrain vertex shader.
-  const float horizontalFieldOfViewRadians = verticalToHorizontalFieldOfView(verticalFieldOfViewRadians, aspectRatio);
-  const float cameraYToFitMapHorizontally = cotan(horizontalFieldOfViewRadians / 2.f) * (widthInM / 2000.f);
-  const float cameraYToFitMapVertically = cotan(verticalFieldOfViewRadians / 2.f) * (heightInM / 2000.f);
-  cameraZoomMax = std::min(cameraYToFitMapHorizontally, cameraYToFitMapVertically);
+  InitializeMapTaskData* taskData = new InitializeMapTaskData();
+  taskData->map = this;
+  taskData->config = std::move(config);
+  taskData->verticalFieldOfViewRadians = verticalFieldOfViewRadians;
+  taskData->aspectRatio = aspectRatio;
 
-  const float distanceToMaxZoomedOutHorizontalEdge = cameraZoomMax / cos(horizontalFieldOfViewRadians / 2.f);
-  const float distanceToMaxZoomedOutVerticalEdge = cameraZoomMax / cos(verticalFieldOfViewRadians / 2.f);
-  cameraFarPlane = std::max(distanceToMaxZoomedOutHorizontalEdge, distanceToMaxZoomedOutVerticalEdge); // TODO: adjust far clipping plane distance according to min elevation + current zoom level.
-
-  return true;
+  return taskManager.schedule(initializeMap, taskData, ThreadType::Worker, &taskData->config->initializedTaskEvent, 1);
 }

@@ -16,12 +16,17 @@ bool Game::tryInitialize(Frame& firstFrame, D3D11Renderer& renderer)
 
   wchar_t mapDirectoryPath[256];
   swprintf_s(mapDirectoryPath, L"%ls/italy", MAPS_DIRECTORY);
-  if (!currentMap.tryLoad(mapDirectoryPath, verticalFieldOfViewRadians, firstFrame.aspectRatio))
+  Ref<TaskEvent> mapInitializedEvent = currentMap.initializeAsync(mapDirectoryPath, verticalFieldOfViewRadians, firstFrame.aspectRatio);
+  if(!mapInitializedEvent.isValid())
   {
-    logError("Failed to load map %ls", mapDirectoryPath);
     return false;
   }
 
+  // TODO: remove after async is finished;
+  Sleep(75);
+
+  // TODO: tryInitializeHeightmap in D3D11 doesn't need the whole texture to be loaded, only its width and height. We can take that from meta file.
+  //       So move meta property initialization to construction.
   if (!renderer.tryLoadMap(currentMap))
   {
     logError("Renderer failed to load map %ls", mapDirectoryPath);

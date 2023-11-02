@@ -24,8 +24,8 @@ DEFINE_TASK_BEGIN(initializeMap, InitializeMapTaskData)
   const float verticalFieldOfViewRadians = taskData.verticalFieldOfViewRadians;
   const float aspectRatio = taskData.aspectRatio;
 
-  map.minElevationInM = config->getInt("minElevationInM");
-  map.maxElevationInM = config->getInt("maxElevationInM");
+  map.minElevationInM = (int16)config->getInt("minElevationInM");
+  map.maxElevationInM = (int16)config->getInt("maxElevationInM");
   map.widthInM = config->getInt("widthInM");
   map.heightInM = config->getInt("heightInM");
 

@@ -162,8 +162,6 @@ int WINAPI WinMain(
 
   Game game;
 
-  window.show();
-
   lastFrame = frames.getLast(frameCount);
   lastFrame->input.cursorPosition = window.getCursorPosition();
   lastFrame->clientAreaWidth = clientAreaWidth;
@@ -177,6 +175,8 @@ int WINAPI WinMain(
     window.showErrorMessageBox(L"Failed to initialize game.", L"Fatal error");
     return -1;
   }
+
+  window.show();
 
   runGameLoop([&](int64 frameIndex, float timeDelta) {
     nextFrame->input.cursorPosition = window.getCursorPosition();

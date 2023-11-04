@@ -22,16 +22,13 @@ bool Game::tryInitialize(Frame& firstFrame, D3D11Renderer& renderer)
     return false;
   }
 
-  // TODO: remove after async is finished;
-  Sleep(75);
-
-  // TODO: tryInitializeHeightmap in D3D11 doesn't need the whole texture to be loaded, only its width and height. We can take that from meta file.
-  //       So move meta property initialization to construction.
   if (!renderer.tryLoadMap(currentMap))
   {
     logError("Renderer failed to load map %ls", mapDirectoryPath);
     return false;
   }
+
+  while(!mapInitializedEvent->isComplete());
 
   firstFrame.camera.endPosition.x = currentMap.widthInM / 2000.f;
   firstFrame.camera.endPosition.y = currentMap.cameraZoomMax;

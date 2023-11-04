@@ -206,9 +206,8 @@ int WINAPI WinMain(
     nextFrame->input.resetForNextFrame();
   });
 
-  // TODO: ensure the folder is created
-  // TODO: stop when actually loaded
   std::filesystem::create_directory("profiling");
+  // TODO: stop when actually loaded
   TRACE_STOP_CAPTURE("profiling\\GameLoad.opt");
 
   return 0;

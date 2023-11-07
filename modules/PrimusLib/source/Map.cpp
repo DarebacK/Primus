@@ -28,14 +28,16 @@ DEFINE_TASK_BEGIN(initializeMap, InitializeMapTaskData)
   map.maxElevationInM = (int16)config->getInt("maxElevationInM");
   map.widthInM = config->getInt("widthInM");
   map.heightInM = config->getInt("heightInM");
+  map.visualHeightMultiplier = config->getFloat("visualHeightMultiplier");
+  map.visualHeightMultiplierInverse = 1.f / map.visualHeightMultiplier;
 
   map.cameraNearPlane = 1.f;
 
   // TODO: use meters as units in our coordinate system.
-  map.cameraZoomMin = (map.maxElevationInM * 0.005f) + map.cameraNearPlane; // TODO: * 0.005f due to visual height multiplier. Put it in a map constant buffer and share it with the terrain vertex shader.
+  map.cameraZoomMin = (map.maxElevationInM * map.visualHeightMultiplier) + map.cameraNearPlane;
   const float horizontalFieldOfViewRadians = verticalToHorizontalFieldOfView(verticalFieldOfViewRadians, aspectRatio);
-  const float cameraYToFitMapHorizontally = cotan(horizontalFieldOfViewRadians / 2.f) * (map.widthInM / 2000.f);
-  const float cameraYToFitMapVertically = cotan(verticalFieldOfViewRadians / 2.f) * (map.heightInM / 2000.f);
+  const float cameraYToFitMapHorizontally = cotan(horizontalFieldOfViewRadians / 2.f) * (map.widthInM / (10 * map.visualHeightMultiplierInverse));
+  const float cameraYToFitMapVertically = cotan(verticalFieldOfViewRadians / 2.f) * (map.heightInM / (10 * map.visualHeightMultiplierInverse));
   map.cameraZoomMax = std::min(cameraYToFitMapHorizontally, cameraYToFitMapVertically);
 
   const float distanceToMaxZoomedOutHorizontalEdge = map.cameraZoomMax / cos(horizontalFieldOfViewRadians / 2.f);

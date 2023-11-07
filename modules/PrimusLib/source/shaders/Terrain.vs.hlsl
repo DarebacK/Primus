@@ -8,6 +8,7 @@ cbuffer Transformation
 static const uint heightmapWidth = 2560;
 static const uint heightmapHeight = 3072;
 
+// TODO: Get the value from map.cfg or Map object and put it in a map constant buffer and share it with the terrain vertex shader.
 static const float visualHeightMultiplier = 5.f;
 
 struct Input

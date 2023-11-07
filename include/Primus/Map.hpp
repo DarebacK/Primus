@@ -14,9 +14,10 @@ struct Map
 
   int64 widthInM = 0;
   int64 heightInM = 0;
-
   int16 minElevationInM = 0;
   int16 maxElevationInM = 0;
+  float visualHeightMultiplier = 1.f;
+  float visualHeightMultiplierInverse = 1.f;
 
   Ref<Texture2D> heightmap;
   Ref<Texture2D> colormap;

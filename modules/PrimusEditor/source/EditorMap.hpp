@@ -5,11 +5,6 @@
 
 #include "Primus/Map.hpp"
 
-struct Colormap
-{
-  Image image;
-};
-
 // Holds data related to map to be used in the editor.
 struct EditorMap : public Map
 {
@@ -19,8 +14,6 @@ struct EditorMap : public Map
   int16 heightmapTileYMax = 50;
   int16 heightmapTileZoom = 7;
   int16 heightmapTileSize = 512;
-
-  Colormap colormap;
 
   bool tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio);
 };

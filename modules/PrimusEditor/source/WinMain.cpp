@@ -5,6 +5,8 @@
 #include "Core/Image.hpp"
 #include "Core/WindowsPlatform.h"
 #include "Core/D3D11.hpp"
+#include "Core/Asset.hpp"
+#include "Core/String.hpp"
 
 #include "ImGui/ImGui.hpp"
 
@@ -158,17 +160,29 @@ static void defineGui()
     {
       if (ImGui::MenuItem("Open"))
       {
-        wchar_t mapFolderPath[MAX_PATH];
-        if (tryChooseFolderDialog(window, L"Choose map folder", mapFolderPath))
+        wchar_t mapFolderAbsolutePath[MAX_PATH];
+        if (tryChooseFolderDialog(window, L"Choose map folder", mapFolderAbsolutePath))
         {
-          EditorMap openedMap;
-          if (!openedMap.tryLoad(mapFolderPath, verticalFieldOfViewRadians, viewportSize.x / float(viewportSize.y)))
+          const wchar_t* assetsFolderName = L"assets\\";
+          uint64 assetsFolderNameLength = wcslen(assetsFolderName);
+          const wchar_t* mapFolderRelativePath = findSubstring(mapFolderAbsolutePath, assetsFolderName, assetsFolderNameLength);
+          if(mapFolderRelativePath)
           {
-            logError("Failed to load %ls map.", mapFolderPath);
+            mapFolderRelativePath += assetsFolderNameLength;
+
+            EditorMap openedMap;
+            if (!openedMap.tryLoad(mapFolderRelativePath, verticalFieldOfViewRadians, viewportSize.x / float(viewportSize.y)))
+            {
+              logError("Failed to load %ls map.", mapFolderRelativePath);
+            }
+            else
+            {
+              maps.emplace_back(std::move(openedMap));
+            }
           }
           else
           {
-            maps.emplace_back(std::move(openedMap));
+            window.showErrorMessageBox(L"Chosen map folder is not an assets subdirectory.", L"Error");
           }
         }
       }
@@ -206,7 +220,7 @@ static void defineGui()
       for (EditorMap& map : maps)
       {
         char mapNameUtf8[1024];
-        if (WideCharToMultiByte(CP_UTF8, 0, map.directoryPath, -1, mapNameUtf8, sizeof(mapNameUtf8), NULL, NULL) == 0)
+        if (WideCharToMultiByte(CP_UTF8, 0, map.name, -1, mapNameUtf8, sizeof(mapNameUtf8), NULL, NULL) == 0)
         {
           continue;
         }
@@ -303,11 +317,17 @@ int WINAPI WinMain(
     return -1;
   }
 
+  if(!tryInitializeAssetSystem())
+  {
+    window.showErrorMessageBox(L"Failed to initialize asset system.", L"Fatal Error");
+    return -1;
+  }
+
   D3D11Renderer renderer;
   if (!renderer.tryInitialize(window))
   {
     window.showErrorMessageBox(L"Failed to initialize D3D11Renderer.", L"Fatal Error");
-    return -2;
+    return -1;
   }
 
   Dar::ImGui imGui{ window, D3D11::device, D3D11::context };  

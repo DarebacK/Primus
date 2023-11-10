@@ -52,6 +52,7 @@ Ref<TaskEvent> Map::initializeAsync(const wchar_t* mapDirectoryPath, float verti
 
   assetDirectory.initialize(mapDirectoryPath);
 
+  // TODO: get rid of file extensions in the lookup
   heightmap = assetDirectory.findAsset<Texture2D>(L"heightmap.s16");
   colormap = assetDirectory.findAsset<Texture2D>(L"colormap.dds");
 

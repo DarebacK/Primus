@@ -64,5 +64,5 @@ Ref<TaskEvent> Map::initializeAsync(const wchar_t* mapDirectoryPath, float verti
   taskData->verticalFieldOfViewRadians = verticalFieldOfViewRadians;
   taskData->aspectRatio = aspectRatio;
 
-  return taskManager.schedule(initializeMap, taskData, ThreadType::Worker, &taskData->config->initializedTaskEvent, 1);
+  return schedule(initializeMap, taskData, ThreadType::Worker, &taskData->config->initializedTaskEvent, 1);
 }

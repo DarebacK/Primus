@@ -142,7 +142,7 @@ int WINAPI WinMain(
     logWarning("Failed to set highest thread priority for the main thread.");
   }
 
-  TaskManagerGuard taskManagerGuard;
+  TaskSystemInitializer taskSystemInitializer;
 
   FileSystemGuard fileSystemGuard;
 
@@ -190,7 +190,7 @@ int WINAPI WinMain(
     debugText(L"%.3f s / %d fps", nextFrame->deltaTime, (int)(1.f / nextFrame->deltaTime));
     debugShowResourcesUsage();
 
-    taskManager.processMainTasks();
+    processMainThreadTasks();
 
     game.update(*lastFrame, *nextFrame, renderer);
 

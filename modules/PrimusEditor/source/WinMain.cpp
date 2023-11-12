@@ -310,7 +310,7 @@ int WINAPI WinMain(
   int showCode
 )
 {
-  taskManager.initialize();
+  TaskSystemInitializer taskSystemInitializer;
 
   if (!window.tryInitializeEditorStyle(instanceHandle, L"PrimusEditor", &WindowProc))
   {

@@ -418,7 +418,7 @@ static bool tryInitializeHeightmap(const Map& map)
     TRACE_SCOPE("terrainIndexBufferIndicesGeneration");
 
     indices.resize(terrainIndexBufferLength);
-    taskManager.parallelFor(0, rowCount - 1, [&heightmap = map.heightmap, indicesData = indices.data()](int64 i, int64 threadIndex) {
+    parallelFor(0, rowCount - 1, [&heightmap = map.heightmap, indicesData = indices.data()](int64 i, int64 threadIndex) {
       const uint32 rowIndex = uint32(heightmap->height - 2 - i); // Start from bottom for clockwise winding order.
       const uint32 baseUpVertexIndex = rowIndex * heightmap->width;
       const uint32 baseDownVertexIndex = (rowIndex + 1) * heightmap->width;

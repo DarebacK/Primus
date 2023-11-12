@@ -71,9 +71,9 @@ void downloadColormap(HINTERNET internet, const char* outputFileName)
   }
 
   std::vector<JpegReader> jpegReaders;
-  jpegReaders.resize(taskManager.getWorkerCount() + 1);
+  jpegReaders.resize(getWorkerCount() + 1);
 
-  taskManager.parallelFor(0, tileCount, [&contentBuffers, &jpegReaders, &colormap](int64 i, int64 threadIndex) {
+  parallelFor(0, tileCount, [&contentBuffers, &jpegReaders, &colormap](int64 i, int64 threadIndex) {
     const int64 tileXIndex = i % widthInTiles;
     const int64 tileYIndex = i / widthInTiles;
 

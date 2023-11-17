@@ -17,8 +17,11 @@ static const float shallowestWaterHeight = 0.f;
 
 float4 pixelShaderMain(Input input) : SV_TARGET
 {
-	const float t = step(0.f, input.heightInMeters);
-	const float4 waterColor = lerp(deepestWaterColor, shallowestWaterColor, smoothstep(deepestWaterHeight, shallowestWaterHeight, input.heightInMeters));
-	const float4 landColor = colormap.Sample(colormapSampler, input.uv);
-	return lerp(waterColor, landColor, t);
+	// TODO: remove this when we are 100% sure we won't need it
+	//const float t = step(0.f, input.heightInMeters);
+	//const float4 waterColor = lerp(deepestWaterColor, shallowestWaterColor, smoothstep(deepestWaterHeight, shallowestWaterHeight, input.heightInMeters));
+	//const float4 landColor = colormap.Sample(colormapSampler, input.uv);
+	//return lerp(waterColor, landColor, t);
+	
+    return colormap.Sample(colormapSampler, input.uv);
 }

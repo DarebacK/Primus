@@ -8,8 +8,6 @@
 // Holds data with lifetime of a map
 struct Map
 {
-  wchar_t name[64];
-
   AssetDirectoryRef assetDirectory;
 
   int64 widthInM = 0;

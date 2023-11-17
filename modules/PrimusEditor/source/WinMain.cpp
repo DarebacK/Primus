@@ -237,9 +237,9 @@ static void defineGui()
             selectedNodeContext = &map;
           }
 
-          defineTreeLeaf(NodeType::Heightmap, &map.heightmap, "heightmap");
+          defineTreeLeaf(NodeType::Heightmap, map.heightmap.get(), "heightmap");
 
-          defineTreeLeaf(NodeType::Colormap, &map.colormap, "colormap");
+          defineTreeLeaf(NodeType::Colormap, map.colormap.get(), "colormap");
 
           ImGui::TreePop();
         }

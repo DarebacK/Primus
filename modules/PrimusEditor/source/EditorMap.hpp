@@ -8,6 +8,8 @@
 // Holds data related to map to be used in the editor.
 struct EditorMap : public Map
 {
+  wchar_t name[64];
+
   int16 heightmapTileXMin = 66;
   int16 heightmapTileXMax = 70;
   int16 heightmapTileYMin = 45;

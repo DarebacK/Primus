@@ -5,4 +5,5 @@
 #include "Internet.hpp"
 
 void downloadHeightmap(HINTERNET internet, const char* outputFileName);
-void writeHeightmapToObj(const Texture2D* heightmap, const wchar_t* path);
+void exportHeightmapToObj(const Texture2D* heightmap, const wchar_t* path);
+void exportHeightmapToObjTiles(const Texture2D* heightmap, const wchar_t* path);

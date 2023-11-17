@@ -265,7 +265,9 @@ static void defineGui()
           ImGui::Text("Map");
           break;
         case NodeType::Heightmap:
+        {
           ImGui::Text("Heightmap");
+          Texture2D* heightmap = (Texture2D*)selectedNodeContext;
           if(ImGui::Button("Export to OBJ"))
           {
             OPENFILENAME openFileName;
@@ -285,7 +287,7 @@ static void defineGui()
             openFileName.lpstrDefExt = L"obj";
             if(GetSaveFileName(&openFileName))
             {
-              writeHeightmapToObj((Texture2D*)selectedNodeContext, openFileName.lpstrFile);
+              exportHeightmapToObj(heightmap, openFileName.lpstrFile);
               MessageBox(window, L"Export to OBJ finished", L"Done", MB_OK);
             }
             else
@@ -294,7 +296,16 @@ static void defineGui()
               logError("Failed to open file dialog for export to OBJ: %X", errorCode);
             }
           }
+          if(ImGui::Button("Export to OBJ tiled"))
+          {
+            wchar_t exportFolderAbsolutePath[MAX_PATH];
+            if(tryChooseFolderDialog(window, L"Choose map folder", exportFolderAbsolutePath))
+            {
+              exportHeightmapToObjTiles(heightmap, exportFolderAbsolutePath);
+            }
+          }
           break;
+        }
         case NodeType::Colormap:
           ImGui::Text("Colormap");
           break;

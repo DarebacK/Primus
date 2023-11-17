@@ -95,24 +95,102 @@ void downloadHeightmap(HINTERNET internet, const char* outputFileName)
   }
 }
 
-void writeHeightmapToObj(const Texture2D* heightmap, const wchar_t* path)
+void exportHeightmapToObj(const Texture2D* heightmap, const wchar_t* path)
 {
   // TODO: Separate heightmap into tiles of 256x256, which will be frustum culled independently and
   //       do limited dissolve in Blender to simplify the mesh as there is a lot of coplanar triangles.
   //       Try to separate land and water geometry in Blender and put it in a separate tile file (with the same coordinates though)
 
-  {
-    TRACE_SCOPE("CreateTerrainObjFile");
+  TRACE_SCOPE();
 
-    heightmap->initializedTaskEvent->waitForCompletion();
-    std::ofstream obj{ path };
-    if(ensure(obj.is_open()))
+  heightmap->initializedTaskEvent->waitForCompletion();
+  std::ofstream obj{ path };
+  if(ensure(obj.is_open()))
+  {
+    for(int32 y = 0; y < heightmap->height; ++y)
     {
-      for(int32 y = 0; y < heightmap->height; ++y)
+      const float z = 1.f - (y / float(heightmap->height - 1));
+
+      for(int32 x = 0; x < heightmap->width; ++x)
+      {
+        int16 heightInMeters = heightmap->sample<int16>(x, y);
+        heightInMeters = std::max(heightInMeters, 0i16);
+
+        obj << "v " << x / float(heightmap->width - 1) << ' ' << heightInMeters / 1000.f << ' ' << z << '\n';
+      }
+    }
+
+    for(int32 y = 0; y < heightmap->height; ++y)
+    {
+      // Flip it for blender
+      const float v = 1.f - (y / float(heightmap->height - 1));
+
+      for(int32 x = 0; x < heightmap->width; ++x)
+      {
+        obj << "vt " << x / float(heightmap->width - 1) << ' ' << v << '\n';
+      }
+    }
+
+    for(int32 y = 0; y < heightmap->height - 1; ++y)
+    {
+      for(int32 x = 1; x < heightmap->width - 1; ++x)
+      {
+        // TODO: this doesn't seem correct due to vertices starting at z = 1. In tiled export it is vice versa.
+        // v3   v4
+        // _______
+        // |\    |
+        // |  X  |
+        // | ___\|
+        // v1   v2
+        const int64 v1 = y * heightmap->width + x;
+        const int64 v2 = v1 + 1;
+        const int64 v3 = (y + 1) * heightmap->width + x;
+        const int64 v4 = v3 + 1;
+
+        obj << "f " << v3 << '/' << v3 << ' ' << v1 << '/' << v1 << ' ' << v2 << '/' << v2 << '\n';
+        obj << "f " << v3 << '/' << v3 << ' ' << v2 << '/' << v2 << ' ' << v4 << '/' << v4 << '\n';
+      }
+    }
+  }
+}
+
+void exportHeightmapToObjTiles(const Texture2D* heightmap, const wchar_t* path)
+{
+  TRACE_SCOPE();
+
+  // TODO: add skirts to the sides to hide the pixel hole between tiles
+
+  constexpr int32 tileSize = 256;
+  const int32 tileCountX = heightmap->width / tileSize;
+  ensure(heightmap->width % tileSize == 0);
+  const int32 tileCountY = heightmap->height / tileSize;
+  ensure(heightmap->width % tileSize == 0);
+
+  heightmap->initializedTaskEvent->waitForCompletion();
+
+  for(int32 tileY = 0; tileY < tileCountY; tileY++)
+  {
+    const int32 yMin = tileY * tileSize;
+    const int32 yMax = (tileY + 1) * tileSize;
+
+    for(int32 tileX = 0; tileX < tileCountX; tileX++)
+    {
+      wchar_t tilePath[MAX_PATH] = L"";
+      wsprintf(tilePath, L"%s\\combinedTile_Y%d_X%d.obj", path, tileY, tileX);
+      std::ofstream obj{ tilePath };
+      if(!ensure(obj.is_open()))
+      {
+        continue;
+      }
+
+      const int32 xMin = tileX * tileSize;
+      const int32 xMax = (tileX + 1) * tileSize;
+
+      for(int32 y = yMin; y <= std::min(yMax, heightmap->height - 1) ; ++y)
       {
         const float z = 1.f - (y / float(heightmap->height - 1));
 
-        for(int32 x = 0; x < heightmap->width; ++x)
+        for(int32 x = xMin; x <= std::min(xMax, heightmap->width - 1); ++x)
         {
           int16 heightInMeters = heightmap->sample<int16>(x, y);
           heightInMeters = std::max(heightInMeters, 0i16);
@@ -121,34 +199,34 @@ void writeHeightmapToObj(const Texture2D* heightmap, const wchar_t* path)
         }
       }
 
-      for(int32 y = 0; y < heightmap->height; ++y)
+      for(int32 y = yMin; y <= std::min(yMax, heightmap->height - 1); ++y)
       {
         // Flip it for blender
         const float v = 1.f - (y / float(heightmap->height - 1));
 
-        for(int32 x = 0; x < heightmap->width; ++x)
+        for(int32 x = xMin; x <= std::min(xMax, heightmap->width - 1); ++x)
         {
           obj << "vt " << x / float(heightmap->width - 1) << ' ' << v << '\n';
         }
       }
 
-      for(int32 y = 0; y < heightmap->height - 1; ++y)
+      for(int32 y = 0; y < tileSize; ++y)
       {
-        for(int32 x = 1; x < heightmap->width - 1; ++x)
+        for(int32 x = 1; x <= tileSize; ++x)
         {
-          // v3   v4
+          // v1   v2
           // _______
           // |\    |
           // |  X  |
           // | ___\|
-          // v1   v2
-          const int64 v1 = y * heightmap->width + x;
+          // v3   v4
+          const int64 v1 = y * (tileSize + 1) + x;
           const int64 v2 = v1 + 1;
-          const int64 v3 = (y + 1) * heightmap->width + x;
+          const int64 v3 = (y + 1) * (tileSize + 1) + x;
           const int64 v4 = v3 + 1;
 
-          obj << "f " << v3 << '/' << v3 << ' ' << v1 << '/' << v1 << ' ' << v2 << '/' << v2 << '\n';
-          obj << "f " << v3 << '/' << v3 << ' ' << v2 << '/' << v2 << ' ' << v4 << '/' << v4 << '\n';
+          obj << "f " << v4 << '/' << v4 << ' ' << v1 << '/' << v1 << ' ' << v3 << '/' << v3 << '\n';
+          obj << "f " << v4 << '/' << v4 << ' ' << v2 << '/' << v2 << ' ' << v1 << '/' << v1 << '\n';
         }
       }
     }

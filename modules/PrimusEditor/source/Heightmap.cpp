@@ -94,3 +94,63 @@ void downloadHeightmap(HINTERNET internet, const char* outputFileName)
     return;
   }
 }
+
+void writeHeightmapToObj(const Ref<Texture2D>& heightmap)
+{
+  // TODO: Separate heightmap into tiles of 256x256, which will be frustum culled independently and
+  //       do limited dissolve in Blender to simplify the mesh as there is a lot of coplanar triangles.
+  //       Try to separate land and water geometry in Blender and put it in a separate tile file (with the same coordinates though)
+
+  {
+    TRACE_SCOPE("CreateTerrainObjFile");
+
+    heightmap->initializedTaskEvent->waitForCompletion();
+    std::ofstream obj{ "terrain.obj" };
+    if(ensure(obj.is_open()))
+    {
+      for(int32 y = 0; y < heightmap->height; ++y)
+      {
+        const float z = 1.f - (y / float(heightmap->height - 1));
+
+        for(int32 x = 0; x < heightmap->width; ++x)
+        {
+          int16 heightInMeters = heightmap->sample<int16>(x, y);
+          heightInMeters = std::max(heightInMeters, 0i16);
+
+          obj << "v " << x / float(heightmap->width - 1) << ' ' << heightInMeters / 1000.f << ' ' << z << '\n';
+        }
+      }
+
+      for(int32 y = 0; y < heightmap->height; ++y)
+      {
+        // Flip it for blender
+        const float v = 1.f - (y / float(heightmap->height - 1));
+
+        for(int32 x = 0; x < heightmap->width; ++x)
+        {
+          obj << "vt " << x / float(heightmap->width - 1) << ' ' << v << '\n';
+        }
+      }
+
+      for(int32 y = 0; y < heightmap->height - 1; ++y)
+      {
+        for(int32 x = 1; x < heightmap->width - 1; ++x)
+        {
+          // v3   v4
+          // _______
+          // |\    |
+          // |  X  |
+          // | ___\|
+          // v1   v2
+          const int64 v1 = y * heightmap->width + x;
+          const int64 v2 = v1 + 1;
+          const int64 v3 = (y + 1) * heightmap->width + x;
+          const int64 v4 = v3 + 1;
+
+          obj << "f " << v3 << '/' << v3 << ' ' << v1 << '/' << v1 << ' ' << v2 << '/' << v2 << '\n';
+          obj << "f " << v3 << '/' << v3 << ' ' << v2 << '/' << v2 << ' ' << v4 << '/' << v4 << '\n';
+        }
+      }
+    }
+  }
+}

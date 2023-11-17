@@ -95,7 +95,7 @@ void downloadHeightmap(HINTERNET internet, const char* outputFileName)
   }
 }
 
-void writeHeightmapToObj(const Ref<Texture2D>& heightmap)
+void writeHeightmapToObj(const Texture2D* heightmap, const wchar_t* path)
 {
   // TODO: Separate heightmap into tiles of 256x256, which will be frustum culled independently and
   //       do limited dissolve in Blender to simplify the mesh as there is a lot of coplanar triangles.
@@ -105,7 +105,7 @@ void writeHeightmapToObj(const Ref<Texture2D>& heightmap)
     TRACE_SCOPE("CreateTerrainObjFile");
 
     heightmap->initializedTaskEvent->waitForCompletion();
-    std::ofstream obj{ "terrain.obj" };
+    std::ofstream obj{ path };
     if(ensure(obj.is_open()))
     {
       for(int32 y = 0; y < heightmap->height; ++y)

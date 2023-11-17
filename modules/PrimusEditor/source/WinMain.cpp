@@ -17,6 +17,8 @@
 #include <memory>
 #include <fstream>
 
+#include <commdlg.h>
+
 #include "Internet.hpp"
 #include "Heightmap.hpp"
 #include "Colormap.hpp"
@@ -264,6 +266,34 @@ static void defineGui()
           break;
         case NodeType::Heightmap:
           ImGui::Text("Heightmap");
+          if(ImGui::Button("Export to OBJ"))
+          {
+            OPENFILENAME openFileName;
+            openFileName.lStructSize = sizeof(openFileName);
+            openFileName.hwndOwner = window;
+            openFileName.lpstrFilter = nullptr;
+            openFileName.lpstrCustomFilter = nullptr;
+            wchar_t filePath[MAX_PATH] = L"";
+            openFileName.lpstrFile = filePath;
+            openFileName.nMaxFile = arrayLength(filePath);
+            wchar_t fileName[MAX_PATH] = L"";
+            openFileName.lpstrFileTitle = fileName;
+            openFileName.nMaxFileTitle = arrayLength(fileName);
+            openFileName.lpstrInitialDir = nullptr; // TODO: use the map directory
+            openFileName.lpstrTitle = L"Export to";
+            openFileName.Flags = OFN_OVERWRITEPROMPT;
+            openFileName.lpstrDefExt = L"obj";
+            if(GetSaveFileName(&openFileName))
+            {
+              writeHeightmapToObj((Texture2D*)selectedNodeContext, openFileName.lpstrFile);
+              MessageBox(window, L"Export to OBJ finished", L"Done", MB_OK);
+            }
+            else
+            {
+              DWORD errorCode = CommDlgExtendedError();
+              logError("Failed to open file dialog for export to OBJ: %X", errorCode);
+            }
+          }
           break;
         case NodeType::Colormap:
           ImGui::Text("Colormap");
@@ -329,6 +359,8 @@ int WINAPI WinMain(
     window.showErrorMessageBox(L"Failed to initialize D3D11Renderer.", L"Fatal Error");
     return -1;
   }
+
+  // TODO: Open last opened maps
 
   Dar::ImGui imGui{ window, D3D11::device, D3D11::context };  
 

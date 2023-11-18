@@ -116,6 +116,7 @@ void exportHeightmapToObj(const Texture2D* heightmap, const wchar_t* path)
         int16 heightInMeters = heightmap->sample<int16>(x, y);
         heightInMeters = std::max(heightInMeters, 0i16);
 
+        // TODO: export in "realistic" units, i.e. x y z are in the same units, so the mesh simplifier in Blender works correctly
         obj << "v " << x / float(heightmap->width - 1) << ' ' << heightInMeters / 1000.f << ' ' << z << '\n';
       }
     }
@@ -195,6 +196,7 @@ void exportHeightmapToObjTiles(const Texture2D* heightmap, const wchar_t* path)
           int16 heightInMeters = heightmap->sample<int16>(x, y);
           heightInMeters = std::max(heightInMeters, 0i16);
 
+          // TODO: export in "realistic" units, i.e. x y z are in the same units, so the mesh simplifier in Blender works correctly
           obj << "v " << x / float(heightmap->width - 1) << ' ' << heightInMeters / 1000.f << ' ' << z << '\n';
         }
       }

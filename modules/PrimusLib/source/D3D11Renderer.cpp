@@ -411,7 +411,7 @@ static bool tryInitializeHeightmap(const Map& map)
   const uint32 degenerateIndexCount = (rowCount - 1) * 2; // row 0 doesn't need degenerate indices. 
   terrainIndexBufferLength = indexCountPerRow * rowCount + degenerateIndexCount;
 
-  // TODO: Continue in optimizing the terrain geometry in PrimusEditor/Heightmap.cpp
+  // TODO: Use the mesh tiles instead. Frustum cull them. Separate land and water meshes.
 
   std::vector<uint32> indices;
   {

@@ -171,6 +171,10 @@ void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path)
   const int32 tileCountY = heightmap->height / tileSize;
   ensure(heightmap->width % tileSize == 0);
 
+  const float xMapCoefficient = (map.widthInM / 1000.f) / float(heightmap->width - 1);
+  const float yMapCoefficient = map.visualHeightMultiplier;
+  const float zMapCoefficient = map.heightInM / 1000.f;
+
   heightmap->initializedTaskEvent->waitForCompletion();
 
   for(int32 tileY = 0; tileY < tileCountY; tileY++)
@@ -193,15 +197,14 @@ void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path)
 
       for(int32 y = yMin; y <= std::min(yMax, heightmap->height - 1) ; ++y)
       {
-        const float z = 1.f - (y / float(heightmap->height - 1));
+        const float z = (1.f - (y / float(heightmap->height - 1))) * zMapCoefficient;
 
         for(int32 x = xMin; x <= std::min(xMax, heightmap->width - 1); ++x)
         {
           int16 heightInMeters = heightmap->sample<int16>(x, y);
           heightInMeters = std::max(heightInMeters, 0i16);
 
-          // TODO: export in "realistic" units, i.e. x y z are in the same units, so the mesh simplifier in Blender works correctly
-          obj << "v " << x / float(heightmap->width - 1) << ' ' << heightInMeters / 1000.f << ' ' << z << '\n';
+          obj << "v " << x * xMapCoefficient  << ' ' << heightInMeters * yMapCoefficient << ' ' << z << '\n';
         }
       }
 

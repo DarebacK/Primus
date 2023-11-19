@@ -302,6 +302,7 @@ static void defineGui()
             if(tryChooseFolderDialog(window, L"Choose map folder", exportFolderAbsolutePath))
             {
               exportHeightmapToObjTiles(*map, exportFolderAbsolutePath);
+              MessageBox(window, L"Export to OBJ finished", L"Done", MB_OK);
             }
           }
           break;

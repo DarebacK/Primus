@@ -191,16 +191,33 @@ void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path)
       const int32 xMin = tileX * tileSize;
       const int32 xMax = (tileX + 1) * tileSize;
 
+      float boundsXMin = std::numeric_limits<float>::max();
+      float boundsXMax = std::numeric_limits<float>::min();
+      float boundsYMin = std::numeric_limits<float>::max();
+      float boundsYMax = std::numeric_limits<float>::min();
+      float boundsZMin = std::numeric_limits<float>::max();
+      float boundsZMax = std::numeric_limits<float>::min();
+
       for(int32 y = yMin; y <= std::min(yMax, heightmap->height - 1) ; ++y)
       {
-        const float z = (1.f - (y / float(heightmap->height - 1))) * zMapCoefficient;
+        const float positionZ = (1.f - (y / float(heightmap->height - 1))) * zMapCoefficient;
+        boundsZMin = std::min(boundsZMin, positionZ);
+        boundsZMax = std::max(boundsZMax, positionZ);
 
         for(int32 x = xMin; x <= std::min(xMax, heightmap->width - 1); ++x)
         {
           int16 heightInMeters = heightmap->sample<int16>(x, y);
           heightInMeters = std::max(heightInMeters, 0i16);
 
-          obj << "v " << x * xMapCoefficient  << ' ' << heightInMeters * yMapCoefficient << ' ' << z << '\n';
+          const float positionX = x * xMapCoefficient;
+          boundsXMin = std::min(boundsXMin, positionX);
+          boundsXMax = std::max(boundsXMax, positionX);
+
+          const float positionY = heightInMeters * yMapCoefficient;
+          boundsYMin = std::min(boundsYMin, positionY);
+          boundsYMax = std::max(boundsYMax, positionY);
+
+          obj << "v " << positionX << ' ' << positionY << ' ' << positionZ << '\n';
         }
       }
 
@@ -234,6 +251,20 @@ void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path)
           obj << "f " << v4 << '/' << v4 << ' ' << v2 << '/' << v2 << ' ' << v1 << '/' << v1 << '\n';
         }
       }
+
+      wsprintf(getFileExtension(tilePath), L"meta");
+      std::ofstream meta{ tilePath };
+      if(!meta.is_open())
+      {
+        return;
+      }
+      meta << "assetType=StaticMesh\n";
+      meta << "boundsXMin=" << boundsXMin << '\n';
+      meta << "boundsXMax=" << boundsXMax << '\n';
+      meta << "boundsYMin=" << boundsYMin << '\n';
+      meta << "boundsYMax=" << boundsYMax << '\n';
+      meta << "boundsZMin=" << boundsZMin << '\n';
+      meta << "boundsZMax=" << boundsZMax << '\n';
     }
   }
 }

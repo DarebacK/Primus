@@ -97,10 +97,6 @@ void downloadHeightmap(HINTERNET internet, const char* outputFileName)
 
 void exportHeightmapToObj(const EditorMap& map, const wchar_t* path)
 {
-  // TODO: Separate heightmap into tiles of 256x256, which will be frustum culled independently and
-  //       do limited dissolve in Blender to simplify the mesh as there is a lot of coplanar triangles.
-  //       Try to separate land and water geometry in Blender and put it in a separate tile file (with the same coordinates though)
-
   TRACE_SCOPE();
 
   Texture2D* heightmap = map.heightmap.get();

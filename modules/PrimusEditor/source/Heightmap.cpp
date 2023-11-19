@@ -95,13 +95,15 @@ void downloadHeightmap(HINTERNET internet, const char* outputFileName)
   }
 }
 
-void exportHeightmapToObj(const Texture2D* heightmap, const wchar_t* path)
+void exportHeightmapToObj(const EditorMap& map, const wchar_t* path)
 {
   // TODO: Separate heightmap into tiles of 256x256, which will be frustum culled independently and
   //       do limited dissolve in Blender to simplify the mesh as there is a lot of coplanar triangles.
   //       Try to separate land and water geometry in Blender and put it in a separate tile file (with the same coordinates though)
 
   TRACE_SCOPE();
+
+  Texture2D* heightmap = map.heightmap.get();
 
   heightmap->initializedTaskEvent->waitForCompletion();
   std::ofstream obj{ path };
@@ -155,11 +157,13 @@ void exportHeightmapToObj(const Texture2D* heightmap, const wchar_t* path)
   }
 }
 
-void exportHeightmapToObjTiles(const Texture2D* heightmap, const wchar_t* path)
+void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path)
 {
   TRACE_SCOPE();
 
   // TODO: add skirts to the sides to hide the pixel hole between tiles
+
+  Texture2D* heightmap = map.heightmap.get();
 
   constexpr int32 tileSize = 256;
   const int32 tileCountX = heightmap->width / tileSize;

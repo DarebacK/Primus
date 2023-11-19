@@ -239,9 +239,9 @@ static void defineGui()
             selectedNodeContext = &map;
           }
 
-          defineTreeLeaf(NodeType::Heightmap, map.heightmap.get(), "heightmap");
+          defineTreeLeaf(NodeType::Heightmap, &map, "heightmap");
 
-          defineTreeLeaf(NodeType::Colormap, map.colormap.get(), "colormap");
+          defineTreeLeaf(NodeType::Colormap, &map, "colormap");
 
           ImGui::TreePop();
         }
@@ -267,7 +267,7 @@ static void defineGui()
         case NodeType::Heightmap:
         {
           ImGui::Text("Heightmap");
-          Texture2D* heightmap = (Texture2D*)selectedNodeContext;
+          EditorMap* map = (EditorMap*)selectedNodeContext;
           if(ImGui::Button("Export to OBJ"))
           {
             OPENFILENAME openFileName;
@@ -287,7 +287,7 @@ static void defineGui()
             openFileName.lpstrDefExt = L"obj";
             if(GetSaveFileName(&openFileName))
             {
-              exportHeightmapToObj(heightmap, openFileName.lpstrFile);
+              exportHeightmapToObj(*map, openFileName.lpstrFile);
               MessageBox(window, L"Export to OBJ finished", L"Done", MB_OK);
             }
             else
@@ -301,7 +301,7 @@ static void defineGui()
             wchar_t exportFolderAbsolutePath[MAX_PATH];
             if(tryChooseFolderDialog(window, L"Choose map folder", exportFolderAbsolutePath))
             {
-              exportHeightmapToObjTiles(heightmap, exportFolderAbsolutePath);
+              exportHeightmapToObjTiles(*map, exportFolderAbsolutePath);
             }
           }
           break;

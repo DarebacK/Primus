@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Core/Asset.hpp"
+#include "EditorMap.hpp"
 
 #include "Internet.hpp"
 
 void downloadHeightmap(HINTERNET internet, const char* outputFileName);
-void exportHeightmapToObj(const Texture2D* heightmap, const wchar_t* path);
-void exportHeightmapToObjTiles(const Texture2D* heightmap, const wchar_t* path);
+void exportHeightmapToObj(const EditorMap& map, const wchar_t* path);
+void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path);

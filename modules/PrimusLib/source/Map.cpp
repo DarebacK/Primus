@@ -58,6 +58,11 @@ Ref<TaskEvent> Map::initializeAsync(const wchar_t* mapDirectoryPath, float verti
   Ref<Config> config = assetDirectory.findAsset<Config>(L"map");
   ensureTrue(config.isValid(), {});
 
+  AssetDirectoryRef combinedTilesDirectory = assetDirectory.findSubdirectory(L"combinedTiles");
+  combinedTilesDirectory.forEachAsset(AssetType::StaticMesh, [&](Asset* asset) {
+    terrainTiles.emplace_back((StaticMesh*)asset);
+  });
+
   InitializeMapTaskData* taskData = new InitializeMapTaskData();
   taskData->map = this;
   taskData->config = std::move(config);

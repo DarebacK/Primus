@@ -20,6 +20,8 @@ struct Map
   Ref<Texture2D> heightmap;
   Ref<Texture2D> colormap;
 
+  std::vector<Ref<StaticMesh>> terrainTiles;
+
   float cameraZoomMin = 0.f;
   float cameraZoomMax = 0.f;
   float cameraNearPlane = 0.f;

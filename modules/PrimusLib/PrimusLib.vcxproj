@@ -32,7 +32,6 @@
   <ItemGroup>
     <None Include="..\..\include\Primus\Shaders.inl" />
     <None Include="source\ConstantBuffers.inl" />
-    <None Include="source\IndexBuffers.inl" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="source\shaders\Terrain.vs.hlsl">

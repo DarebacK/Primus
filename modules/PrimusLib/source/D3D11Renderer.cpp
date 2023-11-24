@@ -14,7 +14,6 @@
 #include <d2d1_2.h>
 
 #include "Core/ShaderRegistryImpl.inl"
-#include "IndexBuffers.inl"
 #include "ConstantBuffers.inl"
 
 using namespace D3D11;
@@ -44,7 +43,7 @@ namespace
   {
     D3D11_FILL_SOLID,
     D3D11_CULL_BACK,
-    FALSE, // FrontCounterClockwise
+    TRUE, // FrontCounterClockwise
     D3D11_DEFAULT_DEPTH_BIAS,
     D3D11_DEFAULT_DEPTH_BIAS_CLAMP,
     D3D11_DEFAULT_SLOPE_SCALED_DEPTH_BIAS,
@@ -155,6 +154,11 @@ namespace
 
   static bool bindD2dTargetToD3dTarget()
   {
+    if(!d2Context)
+    {
+      return false;
+    }
+
     CComPtr<IDXGISurface> dxgiBackBuffer;
     if (FAILED(swapChain->GetBuffer(0, IID_PPV_ARGS(&dxgiBackBuffer))))
     {
@@ -283,7 +287,7 @@ bool D3D11Renderer::tryInitialize(HWND window)
           if(FAILED(d2dFactory->CreateDevice(dxgiDevice, &d2Device))) {
             logError("Failed to create ID2D1Device");
           }
-          if(FAILED(d2Device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &d2Context))) {
+          else if(FAILED(d2Device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &d2Context))) {
             logError("Failed to create ID2D1DeviceContext");
           }
         }
@@ -322,10 +326,13 @@ bool D3D11Renderer::tryInitialize(HWND window)
 
 #ifdef DAR_DEBUG
   // DEBUG TEXT
-  d2Context->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Yellow), &debugTextBrush);
-  dwriteFactory->CreateTextFormat(L"Arial", nullptr, DWRITE_FONT_WEIGHT_LIGHT, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 12, L"en-US", &debugTextFormat);
-  debugTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-  debugTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+  if(d2Context)
+  {
+    d2Context->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Yellow), &debugTextBrush);
+    dwriteFactory->CreateTextFormat(L"Arial", nullptr, DWRITE_FONT_WEIGHT_LIGHT, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 12, L"en-US", &debugTextFormat);
+    debugTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+    debugTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+  }
 #endif
 
   reloadShaders(L"shaders\\build");
@@ -342,7 +349,10 @@ bool D3D11Renderer::tryInitialize(HWND window)
 void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)
 {
   if (swapChain) {
-    d2Context->SetTarget(nullptr);  // Clears the binding to swapChain's back buffer.
+    if(d2Context)
+    {
+      d2Context->SetTarget(nullptr);  // Clears the binding to swapChain's back buffer.
+    }
     mainDepthStencilView.Release();
     mainRenderTargetView.Release();
     renderTarget.Release();
@@ -399,70 +409,6 @@ void D3D11Renderer::setMainRenderTarget()
   context->OMSetRenderTargets(1, &mainRenderTargetView.p, mainDepthStencilView);
 }
 
-static bool tryInitializeHeightmap(const Map& map)
-{
-  TRACE_SCOPE();
-
-  const uint32 indexCountPerRow = uint32(map.heightmap->width * 2);
-  const uint32 rowCount = map.heightmap->height - 1;
-  const uint32 degenerateIndexCount = (rowCount - 1) * 2; // row 0 doesn't need degenerate indices. 
-  terrainIndexBufferLength = indexCountPerRow * rowCount + degenerateIndexCount;
-
-  // TODO: Use the mesh tiles instead. Frustum cull them. Separate land and water meshes.
-
-  std::vector<uint32> indices;
-  {
-    TRACE_SCOPE("terrainIndexBufferIndicesGeneration");
-
-    indices.resize(terrainIndexBufferLength);
-    parallelFor(0, rowCount - 1, [&heightmap = map.heightmap, indicesData = indices.data()](int64 i, int64 threadIndex) {
-      const uint32 rowIndex = uint32(heightmap->height - 2 - i); // Start from bottom for clockwise winding order.
-      const uint32 baseUpVertexIndex = rowIndex * heightmap->width;
-      const uint32 baseDownVertexIndex = (rowIndex + 1) * heightmap->width;
-      const uint32 indexCountPerRow = uint32(heightmap->width * 2 + 2);
-      uint32* indexBufferWriteIterator = indicesData + i * indexCountPerRow;
-      for (int32 x = 0; x < heightmap->width; x++)
-      {
-        *(indexBufferWriteIterator++) = baseDownVertexIndex + x;
-        *(indexBufferWriteIterator++) = baseUpVertexIndex + x;
-      }
-
-      // Degenerate indices to prevent face winding swap.
-      *(indexBufferWriteIterator++) = baseUpVertexIndex + (heightmap->width - 1);
-      *(indexBufferWriteIterator) = baseUpVertexIndex;
-    });
-    // top most row
-    const uint32 baseUpVertexIndex = 0;
-    const uint32 baseDownVertexIndex = map.heightmap->width;
-    uint32* indexBufferWriteIterator = indices.data() + (rowCount - 1) * (indexCountPerRow + 2);
-    for (int32 x = 0; x < map.heightmap->width; x++)
-    {
-      *(indexBufferWriteIterator++) = baseDownVertexIndex + x;
-      *(indexBufferWriteIterator++) = baseUpVertexIndex + x;
-    }
-  }
-
-  {
-    TRACE_SCOPE("terrainIndexBufferCreation");
-
-    D3D11_BUFFER_DESC terrainIndexBufferDescription{
-      terrainIndexBufferLength * sizeof(uint32),
-      D3D11_USAGE_IMMUTABLE,
-      D3D11_BIND_INDEX_BUFFER
-    };
-
-    D3D11_SUBRESOURCE_DATA terrainIndexBufferData{ indices.data(), 0, 0 };
-
-    if (FAILED(device->CreateBuffer(&terrainIndexBufferDescription, &terrainIndexBufferData, &terrainIndexBuffer)))
-    {
-      logError("Failed to create terrain index buffer.");
-      return false;
-    }
-  }
-
-  return true;
-}
-
 static bool tryInitializeColormap(const Map& map)
 {
   TRACE_SCOPE();
@@ -481,11 +427,6 @@ static bool tryInitializeColormap(const Map& map)
 bool D3D11Renderer::tryLoadMap(const Map& map)
 {
   TRACE_SCOPE();
-
-  if (!tryInitializeHeightmap(map))
-  {
-    return false;
-  }
 
   if (!tryInitializeColormap(map))
   {
@@ -539,6 +480,11 @@ static void displayVideoMemoryInfo()
 static void drawDebugText(const Frame& frameState)
 {
   #ifdef DAR_DEBUG
+    if(!d2Context)
+    {
+      return;
+    }
+
     // DEBUG TEXT
     CComPtr<IDWriteTextLayout> debugTextLayout;
     dwriteFactory->CreateTextLayout(
@@ -557,9 +503,8 @@ static void renderTerrain(const Frame& frame, const Map& map)
 {
   TRACE_SCOPE();
 
-  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   context->IASetInputLayout(TerrainInputLayout);
-  context->IASetIndexBuffer(terrainIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
   context->VSSetShader(TerrainVertexShader, nullptr, 0);
   context->VSSetShaderResources(0, 1, &map.heightmap->view.p);
@@ -570,11 +515,29 @@ static void renderTerrain(const Frame& frame, const Map& map)
 
   D3D11_MAPPED_SUBRESOURCE mappedConstantBuffer;
   context->Map(frameConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedConstantBuffer);
-  const Mat4f transform = Mat4x3f::scale(map.widthInM / 1000.f, 1.f, map.heightInM / 1000.f) * frame.camera.viewProjection;
+  const Mat4f transform = frame.camera.viewProjection;
   memcpy(mappedConstantBuffer.pData, &transform, sizeof(transform));
   context->Unmap(frameConstantBuffer, 0);
 
-  context->DrawIndexed(terrainIndexBufferLength, 0, 0);
+  static int64 tileIndex = 0;
+  static int64 tileRenderCount = 0;
+  const int64 tileCount = map.terrainTiles.size();
+
+  // TODO: fix the tiled rendering
+  // TODO: frustum cull tiles
+  for(const Ref<StaticMesh>& tile : map.terrainTiles)
+  {
+    if(tile->positionVertexBuffer && tile->textureCoordinateVertexBuffer)
+    {
+      ID3D11Buffer* buffers[] = { tile->positionVertexBuffer, tile->textureCoordinateVertexBuffer };
+      const uint32 strides[] = { sizeof(Vec3f), sizeof(Vec2f) };
+      const uint32 offsets[] = { 0, 0 };
+      context->IASetVertexBuffers(0, 2, buffers, strides, offsets);
+      context->IASetIndexBuffer(tile->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+      
+      context->DrawIndexed(tile->indexCount, 0, 0);
+    }
+  }
 }
 
 static void render3D(const Frame& frameState, const Map& map)
@@ -589,6 +552,11 @@ static void render3D(const Frame& frameState, const Map& map)
 static void render2D(const Frame& frameState)
 {
   TRACE_SCOPE();
+
+  if(!d2Context)
+  {
+    return;
+  }
 
   d2Context->BeginDraw();
 

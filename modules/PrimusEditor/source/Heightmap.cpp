@@ -180,6 +180,8 @@ void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path)
 
     for(int32 tileX = 0; tileX < tileCountX; tileX++)
     {
+      // TODO: the last X tile (X9 for italy) is corrupted even in Blender
+
       wchar_t tilePath[MAX_PATH] = L"";
       wsprintf(tilePath, L"%s\\combinedTile_Y%d_X%d.obj", path, tileY, tileX);
       std::ofstream obj{ tilePath };

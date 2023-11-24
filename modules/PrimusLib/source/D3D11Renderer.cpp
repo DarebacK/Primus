@@ -180,15 +180,6 @@ namespace
 
 } // anonymous namespace
 
-static void initializeTerrain()
-{
-  if (FAILED(device->CreateBuffer(&terrainConstantBufferDescription, nullptr, &terrainConstantBuffer)))
-  {
-    logError("Failed to create terrain constant buffer.");
-    return;
-  }
-}
-
 bool D3D11Renderer::tryInitialize(HWND window)
 {
   TRACE_SCOPE();
@@ -339,7 +330,11 @@ bool D3D11Renderer::tryInitialize(HWND window)
 
   reloadShaders(L"shaders\\build");
 
-  initializeTerrain();
+  if(FAILED(device->CreateBuffer(&frameConstantBufferDescription, nullptr, &frameConstantBuffer)))
+  {
+    logError("Failed to create terrain constant buffer.");
+    return false;
+  }
 
   return true;
 }
@@ -395,6 +390,8 @@ void D3D11Renderer::beginRender()
   context->ClearRenderTargetView(mainRenderTargetView, clearColor);
   context->ClearRenderTargetView(backBufferRenderTargetView, clearColor);
   context->ClearDepthStencilView(mainDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+  context->VSSetConstantBuffers(0, 1, &frameConstantBuffer.p);
 }
 
 void D3D11Renderer::setMainRenderTarget()
@@ -561,11 +558,10 @@ static void renderTerrain(const Frame& frame, const Map& map)
   TRACE_SCOPE();
 
   context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-  context->IASetInputLayout(FullScreenInputLayout);
+  context->IASetInputLayout(TerrainInputLayout);
   context->IASetIndexBuffer(terrainIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
   context->VSSetShader(TerrainVertexShader, nullptr, 0);
-  context->VSSetConstantBuffers(0, 1, &terrainConstantBuffer.p);
   context->VSSetShaderResources(0, 1, &map.heightmap->view.p);
 
   context->PSSetShader(TerrainPixelShader, nullptr, 0);
@@ -573,10 +569,10 @@ static void renderTerrain(const Frame& frame, const Map& map)
   context->PSSetSamplers(0, 1, &colormapSampler.p);
 
   D3D11_MAPPED_SUBRESOURCE mappedConstantBuffer;
-  context->Map(terrainConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedConstantBuffer);
+  context->Map(frameConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedConstantBuffer);
   const Mat4f transform = Mat4x3f::scale(map.widthInM / 1000.f, 1.f, map.heightInM / 1000.f) * frame.camera.viewProjection;
   memcpy(mappedConstantBuffer.pData, &transform, sizeof(transform));
-  context->Unmap(terrainConstantBuffer, 0);
+  context->Unmap(frameConstantBuffer, 0);
 
   context->DrawIndexed(terrainIndexBufferLength, 0, 0);
 }

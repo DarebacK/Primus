@@ -400,8 +400,6 @@ void D3D11Renderer::beginRender()
   context->ClearRenderTargetView(mainRenderTargetView, clearColor);
   context->ClearRenderTargetView(backBufferRenderTargetView, clearColor);
   context->ClearDepthStencilView(mainDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-  context->VSSetConstantBuffers(0, 1, &frameConstantBuffer.p);
 }
 
 void D3D11Renderer::setMainRenderTarget()
@@ -513,12 +511,6 @@ static void renderTerrain(const Frame& frame, const Map& map)
   context->PSSetShaderResources(0, 1, &map.colormap->view.p);
   context->PSSetSamplers(0, 1, &colormapSampler.p);
 
-  D3D11_MAPPED_SUBRESOURCE mappedConstantBuffer;
-  context->Map(frameConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedConstantBuffer);
-  const Mat4f transform = frame.camera.viewProjection;
-  memcpy(mappedConstantBuffer.pData, &transform, sizeof(transform));
-  context->Unmap(frameConstantBuffer, 0);
-
   static int64 tileIndex = 0;
   static int64 tileRenderCount = 0;
   const int64 tileCount = map.terrainTiles.size();
@@ -581,6 +573,13 @@ void D3D11Renderer::render(const Frame& frameState, const Map& map)
 
   displayVideoMemoryInfo();
 #endif
+
+  D3D11_MAPPED_SUBRESOURCE mappedConstantBuffer;
+  context->Map(frameConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedConstantBuffer);
+  const Mat4f transform = frameState.camera.viewProjection;
+  memcpy(mappedConstantBuffer.pData, &transform, sizeof(transform));
+  context->Unmap(frameConstantBuffer, 0);
+  context->VSSetConstantBuffers(0, 1, &frameConstantBuffer.p);
 
   render3D(frameState, map);
 

@@ -176,12 +176,11 @@ void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path)
   for(int32 tileY = 0; tileY < tileCountY; tileY++)
   {
     const int32 yMin = tileY * tileSize;
-    const int32 yMax = (tileY + 1) * tileSize;
+    const int32 yMax = std::min((tileY + 1) * tileSize, heightmap->height - 1);
+    const int32 currentTileSizeY = yMax - yMin;
 
     for(int32 tileX = 0; tileX < tileCountX; tileX++)
     {
-      // TODO: the last X tile (X9 for italy) is corrupted even in Blender
-
       wchar_t tilePath[MAX_PATH] = L"";
       wsprintf(tilePath, L"%s\\combinedTile_Y%d_X%d.obj", path, tileY, tileX);
       std::ofstream obj{ tilePath };
@@ -191,7 +190,8 @@ void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path)
       }
 
       const int32 xMin = tileX * tileSize;
-      const int32 xMax = (tileX + 1) * tileSize;
+      const int32 xMax = std::min((tileX + 1) * tileSize, heightmap->width - 1);
+      const int32 currentTileSizeX = xMax - xMin;
 
       float boundsXMin = std::numeric_limits<float>::max();
       float boundsXMax = std::numeric_limits<float>::min();
@@ -200,13 +200,13 @@ void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path)
       float boundsZMin = std::numeric_limits<float>::max();
       float boundsZMax = std::numeric_limits<float>::min();
 
-      for(int32 y = yMin; y <= std::min(yMax, heightmap->height - 1) ; ++y)
+      for(int32 y = yMin; y <= yMax ; ++y)
       {
         const float positionZ = (1.f - (y / float(heightmap->height - 1))) * zMapCoefficient;
         boundsZMin = std::min(boundsZMin, positionZ);
         boundsZMax = std::max(boundsZMax, positionZ);
 
-        for(int32 x = xMin; x <= std::min(xMax, heightmap->width - 1); ++x)
+        for(int32 x = xMin; x <= xMax; ++x)
         {
           int16 heightInMeters = heightmap->sample<int16>(x, y);
           heightInMeters = std::max(heightInMeters, 0i16);
@@ -223,20 +223,19 @@ void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path)
         }
       }
 
-      for(int32 y = yMin; y <= std::min(yMax, heightmap->height - 1); ++y)
+      for(int32 y = yMin; y <= yMax; ++y)
       {
-        // Flip it for blender
-        const float v = 1.f - (y / float(heightmap->height - 1));
+        const float v = y / float(heightmap->height - 1);
 
-        for(int32 x = xMin; x <= std::min(xMax, heightmap->width - 1); ++x)
+        for(int32 x = xMin; x <= xMax; ++x)
         {
           obj << "vt " << x / float(heightmap->width - 1) << ' ' << v << '\n';
         }
       }
 
-      for(int32 y = 0; y < tileSize; ++y)
+      for(int32 y = 0; y < currentTileSizeY; ++y)
       {
-        for(int32 x = 1; x <= tileSize; ++x)
+        for(int32 x = 1; x <= currentTileSizeX; ++x)
         {
           // v1   v2
           // _______
@@ -244,9 +243,9 @@ void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path)
           // |  X  |
           // | ___\|
           // v3   v4
-          const int64 v1 = y * (tileSize + 1) + x;
+          const int64 v1 = y * (currentTileSizeX + 1) + x;
           const int64 v2 = v1 + 1;
-          const int64 v3 = (y + 1) * (tileSize + 1) + x;
+          const int64 v3 = (y + 1) * (currentTileSizeX + 1) + x;
           const int64 v4 = v3 + 1;
 
           obj << "f " << v4 << '/' << v4 << ' ' << v1 << '/' << v1 << ' ' << v3 << '/' << v3 << '\n';

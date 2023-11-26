@@ -515,7 +515,6 @@ static void renderTerrain(const Frame& frame, const Map& map)
   static int64 tileRenderCount = 0;
   const int64 tileCount = map.terrainTiles.size();
 
-  // TODO: fix the tiled rendering
   // TODO: frustum cull tiles
   for(const Ref<StaticMesh>& tile : map.terrainTiles)
   {

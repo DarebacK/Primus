@@ -157,8 +157,6 @@ void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path)
 {
   TRACE_SCOPE();
 
-  // TODO: add skirts to the sides to hide the pixel hole between tiles
-
   Texture2D* heightmap = map.heightmap.get();
 
   constexpr int32 tileSize = 256;

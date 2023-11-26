@@ -515,6 +515,62 @@ static void renderTerrain(const Frame& frame, const Map& map)
   static int64 tileRenderCount = 0;
   const int64 tileCount = map.terrainTiles.size();
 
+  // TODO: continue with the frustum culling; not sure if the math is correct, but https://www.rastertek.com/dx11win10tut23.html uses the same which should be left handed.
+  //       However his CheckCube seems suspicious. Also move this somewhere to the engine code as it's general. Also make a version which doesn't check near and far as it's useless in Primus case.
+
+  Vec4f frustumPlane[6];
+
+  // Left Frustum Plane
+  frustumPlane[0].x = frame.camera.viewProjection[0][3] + frame.camera.viewProjection[0][0];
+  frustumPlane[0].y = frame.camera.viewProjection[1][3] + frame.camera.viewProjection[1][0];
+  frustumPlane[0].z = frame.camera.viewProjection[2][3] + frame.camera.viewProjection[2][0];
+  frustumPlane[0].w = frame.camera.viewProjection[3][3] + frame.camera.viewProjection[3][0];
+  float planeNormalLength = length(Vec3f(frustumPlane[0].x, frustumPlane[0].y, frustumPlane[0].z));
+  frustumPlane[0] /= planeNormalLength;
+
+  //// Right Frustum Plane
+  frustumPlane[1].x = frame.camera.viewProjection[0][3] - frame.camera.viewProjection[0][0];
+  frustumPlane[1].y = frame.camera.viewProjection[1][3] - frame.camera.viewProjection[1][0];
+  frustumPlane[1].z = frame.camera.viewProjection[2][3] - frame.camera.viewProjection[2][0];
+  frustumPlane[1].w = frame.camera.viewProjection[3][3] - frame.camera.viewProjection[3][0];
+  planeNormalLength = length(Vec3f(frustumPlane[1].x, frustumPlane[1].y, frustumPlane[1].z));
+  frustumPlane[1] /= planeNormalLength;
+
+
+  //// Top Frustum Plane
+  frustumPlane[2].x = frame.camera.viewProjection[0][3] - frame.camera.viewProjection[0][1];
+  frustumPlane[2].y = frame.camera.viewProjection[1][3] - frame.camera.viewProjection[1][1];
+  frustumPlane[2].z = frame.camera.viewProjection[2][3] - frame.camera.viewProjection[2][1];
+  frustumPlane[2].w = frame.camera.viewProjection[3][3] - frame.camera.viewProjection[3][1];
+  planeNormalLength = length(Vec3f(frustumPlane[2].x, frustumPlane[2].y, frustumPlane[2].z));
+  frustumPlane[2] /= planeNormalLength;
+
+  //// Bottom Frustum Plane
+  frustumPlane[3].x = frame.camera.viewProjection[0][3] + frame.camera.viewProjection[0][1];
+  frustumPlane[3].y = frame.camera.viewProjection[1][3] + frame.camera.viewProjection[1][1];
+  frustumPlane[3].z = frame.camera.viewProjection[2][3] + frame.camera.viewProjection[2][1];
+  frustumPlane[3].w = frame.camera.viewProjection[3][3] + frame.camera.viewProjection[3][1];
+  planeNormalLength = length(Vec3f(frustumPlane[3].x, frustumPlane[3].y, frustumPlane[3].z));
+  frustumPlane[3] /= planeNormalLength;
+
+  // Near Frustum Plane
+  // We could add the third column to the fourth column to get the near plane,
+  // but we don't have to do this because the third column IS the near plane
+  frustumPlane[4].x = frame.camera.viewProjection[0][2];
+  frustumPlane[4].y = frame.camera.viewProjection[1][2];
+  frustumPlane[4].z = frame.camera.viewProjection[2][2];
+  frustumPlane[4].w = frame.camera.viewProjection[3][2];
+  planeNormalLength = length(Vec3f(frustumPlane[4].x, frustumPlane[4].y, frustumPlane[4].z));
+  frustumPlane[4] /= planeNormalLength;
+
+  // Far Frustum Plane
+  frustumPlane[5].x = frame.camera.viewProjection[0][3] - frame.camera.viewProjection[0][2];
+  frustumPlane[5].y = frame.camera.viewProjection[1][3] - frame.camera.viewProjection[1][2];
+  frustumPlane[5].z = frame.camera.viewProjection[2][3] - frame.camera.viewProjection[2][2];
+  frustumPlane[5].w = frame.camera.viewProjection[3][3] - frame.camera.viewProjection[3][2];
+  planeNormalLength = length(Vec3f(frustumPlane[5].x, frustumPlane[5].y, frustumPlane[5].z));
+  frustumPlane[5] /= planeNormalLength;
+
   // TODO: frustum cull tiles
   for(const Ref<StaticMesh>& tile : map.terrainTiles)
   {

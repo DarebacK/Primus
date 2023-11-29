@@ -268,34 +268,6 @@ static void defineGui()
         {
           ImGui::Text("Heightmap");
           EditorMap* map = (EditorMap*)selectedNodeContext;
-          if(ImGui::Button("Export to OBJ"))
-          {
-            OPENFILENAME openFileName;
-            openFileName.lStructSize = sizeof(openFileName);
-            openFileName.hwndOwner = window;
-            openFileName.lpstrFilter = nullptr;
-            openFileName.lpstrCustomFilter = nullptr;
-            wchar_t filePath[MAX_PATH] = L"";
-            openFileName.lpstrFile = filePath;
-            openFileName.nMaxFile = arrayLength(filePath);
-            wchar_t fileName[MAX_PATH] = L"";
-            openFileName.lpstrFileTitle = fileName;
-            openFileName.nMaxFileTitle = arrayLength(fileName);
-            openFileName.lpstrInitialDir = nullptr; // TODO: use the map directory
-            openFileName.lpstrTitle = L"Export to";
-            openFileName.Flags = OFN_OVERWRITEPROMPT;
-            openFileName.lpstrDefExt = L"obj";
-            if(GetSaveFileName(&openFileName))
-            {
-              exportHeightmapToObj(*map, openFileName.lpstrFile);
-              MessageBox(window, L"Export to OBJ finished", L"Done", MB_OK);
-            }
-            else
-            {
-              DWORD errorCode = CommDlgExtendedError();
-              logError("Failed to open file dialog for export to OBJ: %X", errorCode);
-            }
-          }
           if(ImGui::Button("Export to OBJ tiled"))
           {
             wchar_t exportFolderAbsolutePath[MAX_PATH];

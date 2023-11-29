@@ -95,64 +95,6 @@ void downloadHeightmap(HINTERNET internet, const char* outputFileName)
   }
 }
 
-void exportHeightmapToObj(const EditorMap& map, const wchar_t* path)
-{
-  TRACE_SCOPE();
-
-  Texture2D* heightmap = map.heightmap.get();
-
-  heightmap->initializedTaskEvent->waitForCompletion();
-  std::ofstream obj{ path };
-  if(ensure(obj.is_open()))
-  {
-    for(int32 y = 0; y < heightmap->height; ++y)
-    {
-      const float z = 1.f - (y / float(heightmap->height - 1));
-
-      for(int32 x = 0; x < heightmap->width; ++x)
-      {
-        int16 heightInMeters = heightmap->sample<int16>(x, y);
-        heightInMeters = std::max(heightInMeters, 0i16);
-
-        // TODO: export in "realistic" units, i.e. x y z are in the same units, so the mesh simplifier in Blender works correctly
-        obj << "v " << x / float(heightmap->width - 1) << ' ' << heightInMeters / 1000.f << ' ' << z << '\n';
-      }
-    }
-
-    for(int32 y = 0; y < heightmap->height; ++y)
-    {
-      // Flip it for blender
-      const float v = 1.f - (y / float(heightmap->height - 1));
-
-      for(int32 x = 0; x < heightmap->width; ++x)
-      {
-        obj << "vt " << x / float(heightmap->width - 1) << ' ' << v << '\n';
-      }
-    }
-
-    for(int32 y = 0; y < heightmap->height - 1; ++y)
-    {
-      for(int32 x = 1; x < heightmap->width - 1; ++x)
-      {
-        // TODO: this doesn't seem correct due to vertices starting at z = 1. In tiled export it is vice versa.
-        // v3   v4
-        // _______
-        // |\    |
-        // |  X  |
-        // | ___\|
-        // v1   v2
-        const int64 v1 = y * heightmap->width + x;
-        const int64 v2 = v1 + 1;
-        const int64 v3 = (y + 1) * heightmap->width + x;
-        const int64 v4 = v3 + 1;
-
-        obj << "f " << v3 << '/' << v3 << ' ' << v1 << '/' << v1 << ' ' << v2 << '/' << v2 << '\n';
-        obj << "f " << v3 << '/' << v3 << ' ' << v2 << '/' << v2 << ' ' << v4 << '/' << v4 << '\n';
-      }
-    }
-  }
-}
-
 void exportHeightmapToObjTiles(const EditorMap& map, const wchar_t* path)
 {
   TRACE_SCOPE();

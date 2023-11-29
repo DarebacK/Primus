@@ -9,5 +9,6 @@ struct Camera
   Mat4x3f view;
   Mat4f projection;
   Mat4f viewProjection;
+  Mat4f viewProjectionInverse;
   SimpleViewFrustum frustum;
 };

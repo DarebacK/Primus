@@ -115,7 +115,12 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   nextFrame.camera.viewProjectionInverse = inversed(nextFrame.camera.viewProjection);
   nextFrame.camera.frustum.set(nextFrame.camera.viewProjection);
 
-  // TODO: raycast against the terrain through cursor position by transforming its position from clipspace to world using viewProjectionInverse.
+  Vec3f cursorPositionInClipSpace{ -0.5f + nextFrame.input.cursorPositionInClientSpaceNormalized.x, 0.5f - nextFrame.input.cursorPositionInClientSpaceNormalized.y, 0.f };
+  cursorPositionInClipSpace *= 2.f;
+  Vec4f cursorPositionInWorldSpace = toVec4f(cursorPositionInClipSpace, 1.f)  * nextFrame.camera.viewProjectionInverse;
+  cursorPositionInWorldSpace /= cursorPositionInWorldSpace.w;
+  Vec3f cursorRayDirection = normalized(toVec3f(cursorPositionInWorldSpace) - nextFrame.camera.currentPosition);
+  // TODO: raycast against the terrain.
 
   renderer.beginRender();
   renderer.render(nextFrame, currentMap);

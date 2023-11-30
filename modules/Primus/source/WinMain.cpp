@@ -163,9 +163,11 @@ int WINAPI WinMain(
   Game game;
 
   lastFrame = frames.getLast(frameCount);
-  lastFrame->input.cursorPosition = window.getCursorPosition();
   lastFrame->clientAreaWidth = clientAreaWidth;
   lastFrame->clientAreaHeight = clientAreaHeight;
+  lastFrame->input.cursorPositionInClientSpace = window.getCursorPosition();
+  lastFrame->input.cursorPositionInClientSpaceNormalized.x = lastFrame->input.cursorPositionInClientSpace.x / (clientAreaWidth - 1);
+  lastFrame->input.cursorPositionInClientSpaceNormalized.y = lastFrame->input.cursorPositionInClientSpace.y / (clientAreaHeight - 1);
   lastFrame->aspectRatio = float(clientAreaWidth) / clientAreaHeight;
 
   nextFrame = frames.getNext(frameCount);
@@ -179,9 +181,11 @@ int WINAPI WinMain(
   window.show();
 
   runGameLoop([&](int64 frameIndex, float timeDelta) {
-    nextFrame->input.cursorPosition = window.getCursorPosition();
     nextFrame->clientAreaWidth = clientAreaWidth;
     nextFrame->clientAreaHeight = clientAreaHeight;
+    nextFrame->input.cursorPositionInClientSpace = window.getCursorPosition();
+    nextFrame->input.cursorPositionInClientSpaceNormalized.x = (float) nextFrame->input.cursorPositionInClientSpace.x / (clientAreaWidth - 1);
+    nextFrame->input.cursorPositionInClientSpaceNormalized.y = (float) nextFrame->input.cursorPositionInClientSpace.y / (clientAreaHeight - 1);
     nextFrame->aspectRatio = float(clientAreaWidth) / clientAreaHeight;
 
     nextFrame->deltaTime = timeDelta;

@@ -120,7 +120,14 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   Vec4f cursorPositionInWorldSpace = toVec4f(cursorPositionInClipSpace, 1.f)  * nextFrame.camera.viewProjectionInverse;
   cursorPositionInWorldSpace /= cursorPositionInWorldSpace.w;
   Vec3f cursorRayDirection = normalized(toVec3f(cursorPositionInWorldSpace) - nextFrame.camera.currentPosition);
-  // TODO: raycast against the terrain.
+  const Vec3f mapPlane = { 0.f, 1.f, 0.f };
+  Vec3f planeIntersectionInWorldSpace;
+  if(ensure(rayIntersectsPlane(toVec3f(cursorPositionInWorldSpace), cursorRayDirection, mapPlane, 0.f, planeIntersectionInWorldSpace)))
+  {
+    logInfo("%f %f %f", planeIntersectionInWorldSpace.x, planeIntersectionInWorldSpace.y, planeIntersectionInWorldSpace.z);
+    // TODO: convert planeIntersectionInWorldSpace to texture space, similarly project cursorPositionInWorldSpace to the plane and convert to texture space,
+    //       then rasterize the lane between the points and check against heightmap to find the hit texel
+  }
 
   renderer.beginRender();
   renderer.render(nextFrame, currentMap);

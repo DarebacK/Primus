@@ -81,9 +81,9 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   else
   {
     const float cameraRightEdge = nextFrame.camera.endPosition.x + cameraEdgeOffsetFromPosition.x;
-    if (cameraRightEdge > currentMap.widthInM / 1000.f)
+    if (cameraRightEdge > currentMap.widthInKm)
     {
-      nextFrame.camera.endPosition.x -= cameraRightEdge - currentMap.widthInM / 1000.f;
+      nextFrame.camera.endPosition.x -= cameraRightEdge - currentMap.widthInKm;
     }
   }
   const float cameraDownEdge = nextFrame.camera.endPosition.z - cameraEdgeOffsetFromPosition.y;
@@ -94,9 +94,9 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   else
   {
     const float cameraUpEdge = nextFrame.camera.endPosition.z + cameraEdgeOffsetFromPosition.y;
-    if (cameraUpEdge > currentMap.heightInM / 1000.f)
+    if (cameraUpEdge > currentMap.heightInKm)
     {
-      nextFrame.camera.endPosition.z -= cameraUpEdge - currentMap.heightInM / 1000.f;
+      nextFrame.camera.endPosition.z -= cameraUpEdge - currentMap.heightInKm;
     }
   }
 
@@ -121,12 +121,21 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   cursorPositionInWorldSpace /= cursorPositionInWorldSpace.w;
   Vec3f cursorRayDirection = normalized(toVec3f(cursorPositionInWorldSpace) - nextFrame.camera.currentPosition);
   const Vec3f mapPlane = { 0.f, 1.f, 0.f };
-  Vec3f planeIntersectionInWorldSpace;
-  if(ensure(rayIntersectsPlane(toVec3f(cursorPositionInWorldSpace), cursorRayDirection, mapPlane, 0.f, planeIntersectionInWorldSpace)))
+  Vec3f intersectionInWorldSpace;
+  if(ensure(rayIntersectsPlane(toVec3f(cursorPositionInWorldSpace), cursorRayDirection, mapPlane, 0.f, intersectionInWorldSpace)))
   {
-    logInfo("%f %f %f", planeIntersectionInWorldSpace.x, planeIntersectionInWorldSpace.y, planeIntersectionInWorldSpace.z);
-    // TODO: convert planeIntersectionInWorldSpace to texture space, similarly project cursorPositionInWorldSpace to the plane and convert to texture space,
-    //       then rasterize the lane between the points and check against heightmap to find the hit texel
+    if(currentMap.isPointInside(intersectionInWorldSpace))
+    {
+      Vec2f intersectionInTextureSpace;
+      intersectionInTextureSpace.x = intersectionInWorldSpace.x / currentMap.widthInKm;
+      intersectionInTextureSpace.y = (currentMap.heightInKm - intersectionInWorldSpace.z) / currentMap.heightInKm;
+      Vec2f cursorPositionInTextureSpace;
+      cursorPositionInTextureSpace.x = nextFrame.camera.currentPosition.x / currentMap.widthInKm;
+      cursorPositionInTextureSpace.y = (currentMap.widthInKm - nextFrame.camera.currentPosition.z) / currentMap.widthInKm;
+
+      // TODO: rasterize the lane between the points and check against heightmap to find the hit texel, cursorPositionInTextureSpace may be outside of terrain in the future
+      //       so clamp it when sampling from heightmap
+    }
   }
 
   renderer.beginRender();

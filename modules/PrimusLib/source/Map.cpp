@@ -27,7 +27,9 @@ DEFINE_TASK_BEGIN(initializeMap, InitializeMapTaskData)
   map.minElevationInM = (int16)config->getInt("minElevationInM");
   map.maxElevationInM = (int16)config->getInt("maxElevationInM");
   map.widthInM = config->getInt("widthInM");
+  map.widthInKm = map.widthInM / 1000.f;
   map.heightInM = config->getInt("heightInM");
+  map.heightInKm = map.heightInM / 1000.f;
   map.visualHeightMultiplier = config->getFloat("visualHeightMultiplier");
   map.visualHeightMultiplierInverse = 1.f / map.visualHeightMultiplier;
 
@@ -70,4 +72,10 @@ Ref<TaskEvent> Map::initializeAsync(const wchar_t* mapDirectoryPath, float verti
   taskData->aspectRatio = aspectRatio;
 
   return schedule(initializeMap, taskData, ThreadType::Worker, &taskData->config->initializedTaskEvent, 1);
+}
+
+bool Map::isPointInside(const Vec3f& pointInWorldSpace) const
+{
+  return pointInWorldSpace.x >= 0.f && pointInWorldSpace.x <= widthInKm &&
+    pointInWorldSpace.z >= 0.f && pointInWorldSpace.z <= heightInKm;
 }

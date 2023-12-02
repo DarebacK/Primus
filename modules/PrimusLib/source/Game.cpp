@@ -137,8 +137,30 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
       const Vec2i cursorPositionHeightmapTexel = currentMap.heightmap->uvToTexel(cursorPositionUv);
 
       logInfo("{%lld %lld} -> {%lld %lld}", cursorPositionHeightmapTexel.x, cursorPositionHeightmapTexel.y, intersectionHeightmapTexel.x, intersectionHeightmapTexel.y);
-      // TODO: rasterize the lane between the points and check against heightmap to find the hit texel, intersectionUv may be outside of terrain in the future
-      //       so clamp it when sampling from heightmap
+
+      // Rasterization from http://members.chello.at/~easyfilter/Bresenham.pdf
+      int64 x = cursorPositionHeightmapTexel.x;
+      int64 y = cursorPositionHeightmapTexel.y;
+      int64 dx = std::abs(intersectionHeightmapTexel.x - cursorPositionHeightmapTexel.x), sx = cursorPositionHeightmapTexel.x < intersectionHeightmapTexel.x ? 1 : -1;
+      int64 dy = -abs(intersectionHeightmapTexel.y - cursorPositionHeightmapTexel.y), sy = cursorPositionHeightmapTexel.y < intersectionHeightmapTexel.y ? 1 : -1;
+      int64 error = dx + dy;
+      int64 error2; /* error value e_xy */
+      logInfo("raster begin");
+      for(;;) { /* loop */
+        logInfo("Raster %lld %lld", x, y);
+        error2 = 2 * error;
+        if(error2 >= dy) { /* e_xy+e_x > 0 */
+          if(x == intersectionHeightmapTexel.x) break;
+          error += dy; x += sx;
+        }
+        if(error2 <= dx) { /* e_xy+e_y < 0 */
+          if(y == intersectionHeightmapTexel.y) break;
+          error += dx; y += sy;
+        }
+      }
+      logInfo("raster end");
+
+      // TODO: check against heightmap to find the hit texel, intersectionUv may be outside of terrain in the future so clamp it when sampling from heightmap
     }
   }
 

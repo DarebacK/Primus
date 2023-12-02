@@ -40,6 +40,8 @@ bool Game::tryInitialize(Frame& firstFrame, D3D11Renderer& renderer)
 
 void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& renderer)
 {
+  TRACE_SCOPE();
+
   nextFrame.camera.currentPosition = lastFrame.camera.currentPosition;
   nextFrame.camera.endPosition = lastFrame.camera.endPosition;
 
@@ -115,52 +117,78 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   nextFrame.camera.viewProjectionInverse = inversed(nextFrame.camera.viewProjection);
   nextFrame.camera.frustum.set(nextFrame.camera.viewProjection);
 
-  Vec3f cursorPositionInClipSpace{ -0.5f + nextFrame.input.cursorPositionInClientSpaceNormalized.x, 0.5f - nextFrame.input.cursorPositionInClientSpaceNormalized.y, 0.f };
-  cursorPositionInClipSpace *= 2.f;
-  Vec4f cursorPositionInWorldSpace = toVec4f(cursorPositionInClipSpace, 1.f)  * nextFrame.camera.viewProjectionInverse;
-  cursorPositionInWorldSpace /= cursorPositionInWorldSpace.w;
-  Vec3f cursorRayDirection = normalized(toVec3f(cursorPositionInWorldSpace) - nextFrame.camera.currentPosition);
-  const Vec3f mapPlane = { 0.f, 1.f, 0.f };
-  Vec3f intersectionInWorldSpace;
-  if(ensure(rayIntersectsPlane(toVec3f(cursorPositionInWorldSpace), cursorRayDirection, mapPlane, 0.f, intersectionInWorldSpace)))
   {
-    if(currentMap.isPointInside(intersectionInWorldSpace))
+    TRACE_SCOPE("castRayToTerrain");
+
+    Vec3f cursorPositionInClipSpace{ -0.5f + nextFrame.input.cursorPositionInClientSpaceNormalized.x, 0.5f - nextFrame.input.cursorPositionInClientSpaceNormalized.y, 0.f };
+    cursorPositionInClipSpace *= 2.f;
+    Vec4f cursorPositionInWorldSpace = toVec4f(cursorPositionInClipSpace, 1.f)  * nextFrame.camera.viewProjectionInverse;
+    cursorPositionInWorldSpace /= cursorPositionInWorldSpace.w;
+    Vec3f cursorRayDirection = normalized(toVec3f(cursorPositionInWorldSpace) - nextFrame.camera.currentPosition);
+    const Vec3f mapPlane = { 0.f, 1.f, 0.f };
+    Vec3f intersectionInWorldSpace;
+    // TODO: we don't need to test from the cursor position as it's much higher than the highest place on the map. So move the start when y == maxElevationInKm + a small offset.
+    if(ensure(rayIntersectsPlane(toVec3f(cursorPositionInWorldSpace), cursorRayDirection, mapPlane, 0.f, intersectionInWorldSpace)))
     {
-      Vec2f intersectionUv;
-      intersectionUv.x = intersectionInWorldSpace.x / currentMap.widthInKm;
-      intersectionUv.y = (currentMap.heightInKm - intersectionInWorldSpace.z) / currentMap.heightInKm;
-      const Vec2i intersectionHeightmapTexel = currentMap.heightmap->uvToTexel(intersectionUv);;
+      if(currentMap.isPointInside(intersectionInWorldSpace))
+      {
+        Vec2f intersectionUv;
+        intersectionUv.x = intersectionInWorldSpace.x / currentMap.widthInKm;
+        intersectionUv.y = (currentMap.heightInKm - intersectionInWorldSpace.z) / currentMap.heightInKm;
+        const Vec2i intersectionHeightmapTexel = currentMap.heightmap->uvToTexel(intersectionUv);;
 
-      Vec2f cursorPositionUv;
-      cursorPositionUv.x = nextFrame.camera.currentPosition.x / currentMap.widthInKm;
-      cursorPositionUv.y = (currentMap.widthInKm - nextFrame.camera.currentPosition.z) / currentMap.widthInKm;
-      const Vec2i cursorPositionHeightmapTexel = currentMap.heightmap->uvToTexel(cursorPositionUv);
+        Vec2f cursorPositionUv;
+        cursorPositionUv.x = nextFrame.camera.currentPosition.x / currentMap.widthInKm;
+        cursorPositionUv.y = (currentMap.heightInKm - nextFrame.camera.currentPosition.z) / currentMap.heightInKm;
+        const Vec2i cursorPositionHeightmapTexel = currentMap.heightmap->uvToTexel(cursorPositionUv);
 
-      logInfo("{%lld %lld} -> {%lld %lld}", cursorPositionHeightmapTexel.x, cursorPositionHeightmapTexel.y, intersectionHeightmapTexel.x, intersectionHeightmapTexel.y);
+        logInfo("World: {%f %f %f} -> {%f %f %f}", cursorPositionInWorldSpace.x, cursorPositionInWorldSpace.y, cursorPositionInWorldSpace.z,
+          intersectionInWorldSpace.x, intersectionInWorldSpace.y, intersectionInWorldSpace.z);
+        logInfo("UV: {%f %f} -> {%f %f}", cursorPositionUv.x, cursorPositionUv.y, intersectionUv.x, intersectionUv.y);
+        logInfo("Texel: {%lld %lld} -> {%lld %lld}", cursorPositionHeightmapTexel.x, cursorPositionHeightmapTexel.y, intersectionHeightmapTexel.x, intersectionHeightmapTexel.y);
 
-      // Rasterization from http://members.chello.at/~easyfilter/Bresenham.pdf
-      int64 x = cursorPositionHeightmapTexel.x;
-      int64 y = cursorPositionHeightmapTexel.y;
-      int64 dx = std::abs(intersectionHeightmapTexel.x - cursorPositionHeightmapTexel.x), sx = cursorPositionHeightmapTexel.x < intersectionHeightmapTexel.x ? 1 : -1;
-      int64 dy = -abs(intersectionHeightmapTexel.y - cursorPositionHeightmapTexel.y), sy = cursorPositionHeightmapTexel.y < intersectionHeightmapTexel.y ? 1 : -1;
-      int64 error = dx + dy;
-      int64 error2; /* error value e_xy */
-      logInfo("raster begin");
-      for(;;) { /* loop */
-        logInfo("Raster %lld %lld", x, y);
-        error2 = 2 * error;
-        if(error2 >= dy) { /* e_xy+e_x > 0 */
-          if(x == intersectionHeightmapTexel.x) break;
-          error += dy; x += sx;
+        // Rasterization from http://members.chello.at/~easyfilter/Bresenham.pdf
+        int64 x = cursorPositionHeightmapTexel.x;
+        int64 y = cursorPositionHeightmapTexel.y;
+        int64 dx = std::abs(intersectionHeightmapTexel.x - cursorPositionHeightmapTexel.x);
+        int64 sx = cursorPositionHeightmapTexel.x < intersectionHeightmapTexel.x ? 1 : -1;
+        int64 dy = -abs(intersectionHeightmapTexel.y - cursorPositionHeightmapTexel.y);
+        int64 sy = cursorPositionHeightmapTexel.y < intersectionHeightmapTexel.y ? 1 : -1;
+        int64 error = dx + dy;
+        int64 error2;
+        float t = 0.f;
+        for(;;) {
+          const float yWorldSpace = cursorPositionInWorldSpace.y + t * cursorRayDirection.y;
+
+          if(currentMap.heightmap->isTexelInside(x, y))
+          {
+            // TODO: we should test exactly on the ray point vs the height inside the triangle, not nearest texel
+            const float heightInM = std::max(float(currentMap.heightmap->sample<int16>(x, y)), 0.f);
+            const float visualHeightInKm = heightInM * currentMap.visualHeightMultiplier;
+            if(yWorldSpace <= visualHeightInKm)
+            {
+              break;
+            }
+          }
+
+          error2 = 2 * error;
+          if(error2 >= dy) {
+            if(x == intersectionHeightmapTexel.x) break;
+            error += dy; x += sx;
+            const float xWorldSpace = (x / float(currentMap.heightmap->width - 1)) * currentMap.widthInKm;
+            t = (xWorldSpace - cursorPositionInWorldSpace.x) / cursorRayDirection.x;
+          }
+          if(error2 <= dx) {
+            if(y == intersectionHeightmapTexel.y) break;
+            error += dx; y += sy;
+            const float zWorldSpace = ((currentMap.heightmap->height - 1 - y) / float(currentMap.heightmap->height - 1)) * currentMap.heightInKm;
+            t = (zWorldSpace - cursorPositionInWorldSpace.z) / cursorRayDirection.z;
+          }
         }
-        if(error2 <= dx) { /* e_xy+e_y < 0 */
-          if(y == intersectionHeightmapTexel.y) break;
-          error += dx; y += sy;
-        }
+
+        const float heightInKm = std::max(float(currentMap.heightmap->sample<int16>(x, y)), 0.f) / 1000.f;
+        logInfo("Hit texel = {%lld %lld}, height = %fkm", x, y, heightInKm);
       }
-      logInfo("raster end");
-
-      // TODO: check against heightmap to find the hit texel, intersectionUv may be outside of terrain in the future so clamp it when sampling from heightmap
     }
   }
 

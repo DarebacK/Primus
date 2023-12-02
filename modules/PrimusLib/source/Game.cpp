@@ -126,14 +126,18 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   {
     if(currentMap.isPointInside(intersectionInWorldSpace))
     {
-      Vec2f intersectionInTextureSpace;
-      intersectionInTextureSpace.x = intersectionInWorldSpace.x / currentMap.widthInKm;
-      intersectionInTextureSpace.y = (currentMap.heightInKm - intersectionInWorldSpace.z) / currentMap.heightInKm;
-      Vec2f cursorPositionInTextureSpace;
-      cursorPositionInTextureSpace.x = nextFrame.camera.currentPosition.x / currentMap.widthInKm;
-      cursorPositionInTextureSpace.y = (currentMap.widthInKm - nextFrame.camera.currentPosition.z) / currentMap.widthInKm;
+      Vec2f intersectionUv;
+      intersectionUv.x = intersectionInWorldSpace.x / currentMap.widthInKm;
+      intersectionUv.y = (currentMap.heightInKm - intersectionInWorldSpace.z) / currentMap.heightInKm;
+      const Vec2i intersectionHeightmapTexel = currentMap.heightmap->uvToTexel(intersectionUv);;
 
-      // TODO: rasterize the lane between the points and check against heightmap to find the hit texel, cursorPositionInTextureSpace may be outside of terrain in the future
+      Vec2f cursorPositionUv;
+      cursorPositionUv.x = nextFrame.camera.currentPosition.x / currentMap.widthInKm;
+      cursorPositionUv.y = (currentMap.widthInKm - nextFrame.camera.currentPosition.z) / currentMap.widthInKm;
+      const Vec2i cursorPositionHeightmapTexel = currentMap.heightmap->uvToTexel(cursorPositionUv);
+
+      logInfo("{%lld %lld} -> {%lld %lld}", cursorPositionHeightmapTexel.x, cursorPositionHeightmapTexel.y, intersectionHeightmapTexel.x, intersectionHeightmapTexel.y);
+      // TODO: rasterize the lane between the points and check against heightmap to find the hit texel, intersectionUv may be outside of terrain in the future
       //       so clamp it when sampling from heightmap
     }
   }

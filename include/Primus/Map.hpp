@@ -18,6 +18,7 @@ struct Map
   float heightInKm = 0.f;
   int16 minElevationInM = 0;
   int16 maxElevationInM = 0;
+  float maxElevationInKm = 0.f;
   float visualHeightMultiplier = 1.f;
   float visualHeightMultiplierInverse = 1.f;
 

@@ -120,6 +120,7 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
   {
     TRACE_SCOPE("castRayToTerrain");
 
+    // TODO: refactor ray casting into it's own function. Also probably refactor the camera stuff.
     Vec3f cursorPositionInClipSpace{ -0.5f + nextFrame.input.cursorPositionInClientSpaceNormalized.x, 0.5f - nextFrame.input.cursorPositionInClientSpaceNormalized.y, 0.f };
     cursorPositionInClipSpace *= 2.f;
     Vec4f cursorPositionInWorldSpace = toVec4f(cursorPositionInClipSpace, 1.f)  * nextFrame.camera.viewProjectionInverse;
@@ -127,8 +128,14 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
     Vec3f cursorRayDirection = normalized(toVec3f(cursorPositionInWorldSpace) - nextFrame.camera.currentPosition);
     const Vec3f mapPlane = { 0.f, 1.f, 0.f };
     Vec3f intersectionInWorldSpace;
-    // TODO: we don't need to test from the cursor position as it's much higher than the highest place on the map. So move the start when y == maxElevationInKm + a small offset.
-    if(ensure(rayIntersectsPlane(toVec3f(cursorPositionInWorldSpace), cursorRayDirection, mapPlane, 0.f, intersectionInWorldSpace)))
+    // We don't need to test from the cursor position as it's much higher than the highest place on the map.
+    // So move the start when y == maxElevationInKm + a small offset.
+    Vec3f rayOrigin;
+    rayOrigin.y = std::min(cursorPositionInWorldSpace.y, currentMap.maxElevationInM * currentMap.visualHeightMultiplier + 1.f);
+    float rayOriginT = (rayOrigin.y - cursorPositionInWorldSpace.y) / cursorRayDirection.y;
+    rayOrigin.x = cursorPositionInWorldSpace.x + rayOriginT * cursorRayDirection.x;
+    rayOrigin.z = cursorPositionInWorldSpace.z + rayOriginT * cursorRayDirection.z;
+    if(ensure(rayIntersectsPlane(rayOrigin, cursorRayDirection, mapPlane, 0.f, intersectionInWorldSpace)))
     {
       if(currentMap.isPointInside(intersectionInWorldSpace))
       {
@@ -137,28 +144,28 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
         intersectionUv.y = (currentMap.heightInKm - intersectionInWorldSpace.z) / currentMap.heightInKm;
         const Vec2i intersectionHeightmapTexel = currentMap.heightmap->uvToTexel(intersectionUv);;
 
-        Vec2f cursorPositionUv;
-        cursorPositionUv.x = nextFrame.camera.currentPosition.x / currentMap.widthInKm;
-        cursorPositionUv.y = (currentMap.heightInKm - nextFrame.camera.currentPosition.z) / currentMap.heightInKm;
-        const Vec2i cursorPositionHeightmapTexel = currentMap.heightmap->uvToTexel(cursorPositionUv);
+        Vec2f rayOriginUv;
+        rayOriginUv.x = rayOrigin.x / currentMap.widthInKm;
+        rayOriginUv.y = (currentMap.heightInKm - rayOrigin.z) / currentMap.heightInKm;
+        const Vec2i rayOriginHeightmapTexel = currentMap.heightmap->uvToTexel(rayOriginUv);
 
-        logInfo("World: {%f %f %f} -> {%f %f %f}", cursorPositionInWorldSpace.x, cursorPositionInWorldSpace.y, cursorPositionInWorldSpace.z,
-          intersectionInWorldSpace.x, intersectionInWorldSpace.y, intersectionInWorldSpace.z);
-        logInfo("UV: {%f %f} -> {%f %f}", cursorPositionUv.x, cursorPositionUv.y, intersectionUv.x, intersectionUv.y);
-        logInfo("Texel: {%lld %lld} -> {%lld %lld}", cursorPositionHeightmapTexel.x, cursorPositionHeightmapTexel.y, intersectionHeightmapTexel.x, intersectionHeightmapTexel.y);
+        //logInfo("World: {%f %f %f} -> {%f %f %f}", rayOrigin.x, rayOrigin.y, rayOrigin.z,
+        //  intersectionInWorldSpace.x, intersectionInWorldSpace.y, intersectionInWorldSpace.z);
+        //logInfo("UV: {%f %f} -> {%f %f}", rayOriginUv.x, rayOriginUv.y, intersectionUv.x, intersectionUv.y);
+        //logInfo("Texel: {%lld %lld} -> {%lld %lld}", rayOriginHeightmapTexel.x, rayOriginHeightmapTexel.y, intersectionHeightmapTexel.x, intersectionHeightmapTexel.y);
 
         // Rasterization from http://members.chello.at/~easyfilter/Bresenham.pdf
-        int64 x = cursorPositionHeightmapTexel.x;
-        int64 y = cursorPositionHeightmapTexel.y;
-        int64 dx = std::abs(intersectionHeightmapTexel.x - cursorPositionHeightmapTexel.x);
-        int64 sx = cursorPositionHeightmapTexel.x < intersectionHeightmapTexel.x ? 1 : -1;
-        int64 dy = -abs(intersectionHeightmapTexel.y - cursorPositionHeightmapTexel.y);
-        int64 sy = cursorPositionHeightmapTexel.y < intersectionHeightmapTexel.y ? 1 : -1;
+        int64 x = rayOriginHeightmapTexel.x;
+        int64 y = rayOriginHeightmapTexel.y;
+        int64 dx = std::abs(intersectionHeightmapTexel.x - rayOriginHeightmapTexel.x);
+        int64 sx = rayOriginHeightmapTexel.x < intersectionHeightmapTexel.x ? 1 : -1;
+        int64 dy = -abs(intersectionHeightmapTexel.y - rayOriginHeightmapTexel.y);
+        int64 sy = rayOriginHeightmapTexel.y < intersectionHeightmapTexel.y ? 1 : -1;
         int64 error = dx + dy;
         int64 error2;
         float t = 0.f;
         for(;;) {
-          const float yWorldSpace = cursorPositionInWorldSpace.y + t * cursorRayDirection.y;
+          const float yWorldSpace = rayOrigin.y + t * cursorRayDirection.y;
 
           if(currentMap.heightmap->isTexelInside(x, y))
           {
@@ -176,18 +183,18 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
             if(x == intersectionHeightmapTexel.x) break;
             error += dy; x += sx;
             const float xWorldSpace = (x / float(currentMap.heightmap->width - 1)) * currentMap.widthInKm;
-            t = (xWorldSpace - cursorPositionInWorldSpace.x) / cursorRayDirection.x;
+            t = (xWorldSpace - rayOrigin.x) / cursorRayDirection.x;
           }
           if(error2 <= dx) {
             if(y == intersectionHeightmapTexel.y) break;
             error += dx; y += sy;
             const float zWorldSpace = ((currentMap.heightmap->height - 1 - y) / float(currentMap.heightmap->height - 1)) * currentMap.heightInKm;
-            t = (zWorldSpace - cursorPositionInWorldSpace.z) / cursorRayDirection.z;
+            t = (zWorldSpace - rayOrigin.z) / cursorRayDirection.z;
           }
         }
 
         const float heightInKm = std::max(float(currentMap.heightmap->sample<int16>(x, y)), 0.f) / 1000.f;
-        logInfo("Hit texel = {%lld %lld}, height = %fkm", x, y, heightInKm);
+        //logInfo("Hit texel = {%lld %lld}, height = %fkm", x, y, heightInKm);
       }
     }
   }

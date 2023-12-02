@@ -26,6 +26,7 @@ DEFINE_TASK_BEGIN(initializeMap, InitializeMapTaskData)
 
   map.minElevationInM = (int16)config->getInt("minElevationInM");
   map.maxElevationInM = (int16)config->getInt("maxElevationInM");
+  map.maxElevationInKm = map.maxElevationInM / 1000.f;
   map.widthInM = config->getInt("widthInM");
   map.widthInKm = map.widthInM / 1000.f;
   map.heightInM = config->getInt("heightInM");

@@ -33,7 +33,7 @@ namespace
   DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
   CComPtr<ID3D11RenderTargetView> backBufferRenderTargetView = nullptr;
   constexpr UINT msaaSampleCount = 1; // TODO: Is set to 1 because higher numbers cause artifacts in terrain. Resolve this.
-  CComPtr<ID3D11Texture2D> renderTarget = nullptr;
+  CComPtr<ID3D11Texture2D> mainRenderTarget = nullptr;
   CD3D11_TEXTURE2D_DESC renderTargetDesc = {};
   CComPtr<ID3D11RenderTargetView> mainRenderTargetView = nullptr;
   CComPtr<ID3D11DepthStencilView> mainDepthStencilView = nullptr;
@@ -299,13 +299,13 @@ bool D3D11Renderer::tryInitialize(HWND window)
     return false;
   }
 
-  renderTarget = createRenderTarget();
-  if (!renderTarget) {
+  mainRenderTarget = createRenderTarget();
+  if (!mainRenderTarget) {
     logError("Failed to create render target.");
     return false;
   }
 
-  mainRenderTargetView = createRenderTargetView(renderTarget, renderTargetDesc.Format);
+  mainRenderTargetView = createRenderTargetView(mainRenderTarget, renderTargetDesc.Format);
   if (!mainRenderTargetView) {
     logError("Failed to initialize render target view.");
     return false;
@@ -355,7 +355,7 @@ void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)
     }
     mainDepthStencilView.Release();
     mainRenderTargetView.Release();
-    renderTarget.Release();
+    mainRenderTarget.Release();
     if (FAILED(swapChain->ResizeBuffers(0, 0, 0, swapChainDesc.Format, swapChainDesc.Flags))) {
 #ifdef DAR_DEBUG
       debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_SUMMARY);
@@ -368,13 +368,13 @@ void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)
       return;
     }
 
-    renderTarget = createRenderTarget();
-    if (!renderTarget) {
+    mainRenderTarget = createRenderTarget();
+    if (!mainRenderTarget) {
       logError("Failed to create render target after window resize.");
       return;
     }
 
-    mainRenderTargetView = createRenderTargetView(renderTarget, renderTargetDesc.Format);
+    mainRenderTargetView = createRenderTargetView(mainRenderTarget, renderTargetDesc.Format);
     if (!mainRenderTargetView) {
       logError("Failed to create render target view after window resize.");
       return;
@@ -448,7 +448,7 @@ static void resolveRenderTargetIntoBackBuffer()
 {
   CComPtr<ID3D11Texture2D> backBuffer = nullptr;
   if (SUCCEEDED(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)))) {
-    context->ResolveSubresource(backBuffer, 0, renderTarget, 0, swapChainDesc.Format);
+    context->ResolveSubresource(backBuffer, 0, mainRenderTarget, 0, swapChainDesc.Format);
   }
   else {
     logError("resolveRenderTargetIntoBackBuffer failed. Failed to get swapChain's back buffer.");

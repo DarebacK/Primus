@@ -153,7 +153,7 @@ int WINAPI WinMain(
   }
 
   D3D11Renderer renderer;
-  if (!renderer.tryInitialize(window)) {
+  if (!renderer.tryInitialize(window, false)) {
     window.showErrorMessageBox(L"Failed to initialize Direct3D11 renderer", L"Fatal error");
     return -1;
   }

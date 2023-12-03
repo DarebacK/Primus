@@ -28,6 +28,8 @@ MainWindow window;
 
 Input input;
 
+D3D11Renderer renderer;
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK WindowProc(
@@ -251,9 +253,20 @@ static void defineGui()
     }
 
     {
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
       ImGui::Begin("Viewport");
 
+      // TODO: resize renderer render target based on viewport
+
+      void* renderTargetSrv = renderer.getMainRenderTargetSrv();
+      if(ensure(renderTargetSrv))
+      {
+        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+        ImGui::Image(renderTargetSrv, viewportSize);
+      }
+
       ImGui::End();
+      ImGui::PopStyleVar();
     }
 
     {
@@ -338,8 +351,7 @@ int WINAPI WinMain(
     return -1;
   }
 
-  D3D11Renderer renderer;
-  if (!renderer.tryInitialize(window))
+  if (!renderer.tryInitialize(window, true))
   {
     window.showErrorMessageBox(L"Failed to initialize D3D11Renderer.", L"Fatal Error");
     return -1;

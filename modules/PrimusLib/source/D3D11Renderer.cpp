@@ -26,6 +26,7 @@ namespace D3D11
 
 namespace
 {
+  bool isEditor = false;
   D3D_FEATURE_LEVEL featureLevel = (D3D_FEATURE_LEVEL)0;
   CComPtr<IDXGIAdapter3> dxgiAdapter;
   DXGI_ADAPTER_DESC2 dxgiAdapterDesc{};
@@ -37,6 +38,7 @@ namespace
   CD3D11_TEXTURE2D_DESC renderTargetDesc = {};
   CComPtr<ID3D11RenderTargetView> mainRenderTargetView = nullptr;
   CComPtr<ID3D11DepthStencilView> mainDepthStencilView = nullptr;
+  CComPtr<ID3D11ShaderResourceView> mainRenderTargetSrv = nullptr;
   float clearColor[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
   CComPtr<ID3D11RasterizerState> rasterizerState = nullptr;
   D3D11_RASTERIZER_DESC rasterizerDesc =
@@ -93,15 +95,21 @@ namespace
     setViewport((FLOAT)renderTargetDesc.Width, (FLOAT)renderTargetDesc.Height);
   }
 
-  static CComPtr<ID3D11Texture2D> createRenderTarget()
+  static CComPtr<ID3D11Texture2D> createMainRenderTarget()
   {
+    UINT bindFlags = D3D11_BIND_RENDER_TARGET;
+    if(isEditor)
+    {
+      bindFlags |= D3D11_BIND_SHADER_RESOURCE;
+    }
+
     renderTargetDesc = CD3D11_TEXTURE2D_DESC(
       swapChainDesc.Format,
       swapChainDesc.Width,
       swapChainDesc.Height,
       1,
       1,
-      D3D11_BIND_RENDER_TARGET,
+      bindFlags,
       D3D11_USAGE_DEFAULT,
       0,
       msaaSampleCount
@@ -112,6 +120,13 @@ namespace
       logError("Failed to create render target texture.");
       return nullptr;
     }
+
+    if(isEditor && FAILED(device->CreateShaderResourceView(result, nullptr, &mainRenderTargetSrv)))
+    {
+      ensureNoEntry();
+      logError("Failed to create main render target shader resource view.");
+    }
+
     return result;
   }
 
@@ -184,9 +199,11 @@ namespace
 
 } // anonymous namespace
 
-bool D3D11Renderer::tryInitialize(HWND window)
+bool D3D11Renderer::tryInitialize(HWND window, bool inIsEditor)
 {
   TRACE_SCOPE();
+
+  isEditor = inIsEditor;
 
   {
     // DEVICE
@@ -299,7 +316,7 @@ bool D3D11Renderer::tryInitialize(HWND window)
     return false;
   }
 
-  mainRenderTarget = createRenderTarget();
+  mainRenderTarget = createMainRenderTarget();
   if (!mainRenderTarget) {
     logError("Failed to create render target.");
     return false;
@@ -368,7 +385,7 @@ void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)
       return;
     }
 
-    mainRenderTarget = createRenderTarget();
+    mainRenderTarget = createMainRenderTarget();
     if (!mainRenderTarget) {
       logError("Failed to create render target after window resize.");
       return;
@@ -405,6 +422,12 @@ void D3D11Renderer::beginRender()
 void D3D11Renderer::setMainRenderTarget()
 {
   context->OMSetRenderTargets(1, &mainRenderTargetView.p, mainDepthStencilView);
+}
+
+void* D3D11Renderer::getMainRenderTargetSrv()
+{
+  ensure(isEditor);
+  return mainRenderTargetSrv.p;
 }
 
 static bool tryInitializeColormap(const Map& map)

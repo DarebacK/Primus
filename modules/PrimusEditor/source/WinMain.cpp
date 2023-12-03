@@ -281,6 +281,7 @@ static void defineGui()
         }
         case NodeType::Colormap:
           ImGui::Text("Colormap");
+          // TODO: add option to generate mipmaps
           break;
         default:
           break;
@@ -360,6 +361,8 @@ int WINAPI WinMain(
     defineGui();
 
     renderer.beginRender();
+
+    // TODO: Update and render the game to the viewport
 
     renderer.setBackBufferRenderTarget();
     imGui.render();

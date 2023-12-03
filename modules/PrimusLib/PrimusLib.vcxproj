@@ -21,6 +21,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\D3D11Renderer.cpp" />
+    <ClCompile Include="source\Frame.cpp" />
     <ClCompile Include="source\Game.cpp" />
     <ClCompile Include="source\Map.cpp" />
   </ItemGroup>

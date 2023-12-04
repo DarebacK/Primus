@@ -16,6 +16,7 @@
 #include <vector>
 #include <memory>
 #include <fstream>
+#include <string>
 
 #include <commdlg.h>
 
@@ -125,9 +126,41 @@ struct DownloadPopup
 
 } downloadPopup;
 
-static std::vector<EditorMap> maps;
-
 static Vec2i viewportSize = { 1920, 1080 }; // TODO: get the true viewport size.
+
+static std::vector<EditorMap> maps;
+static const char* const lastOpenedMapsFileName = "lastOpenedMaps.txt";
+static void loadLastOpenedMaps()
+{
+  std::wifstream lastOpenedMapsFile{ lastOpenedMapsFileName };
+  if(lastOpenedMapsFile.is_open())
+  {
+    std::wstring line;
+    while(std::getline(lastOpenedMapsFile, line))
+    {
+      EditorMap openedMap;
+      if(!openedMap.tryLoad(line.c_str(), verticalFieldOfViewRadians, viewportSize.x / float(viewportSize.y)))
+      {
+        logError("Failed to load %ls map.", line.c_str());
+      }
+      else
+      {
+        maps.emplace_back(std::move(openedMap));
+      }
+    }
+  }
+}
+static void storeLastOpenedMapsPaths()
+{
+  std::wofstream lastOpenedMapsFile{ lastOpenedMapsFileName };
+  if(lastOpenedMapsFile.is_open())
+  {
+    for(const EditorMap& map : maps)
+    {
+      lastOpenedMapsFile << map.path << L"\n";
+    }
+  }
+}
 
 enum class NodeType
 {
@@ -357,8 +390,6 @@ int WINAPI WinMain(
     return -1;
   }
 
-  // TODO: Open last opened maps
-
   Dar::ImGui imGui{ window, D3D11::device, D3D11::context };  
 
   ImGuiIO& imGuiIo = ImGui::GetIO();
@@ -366,6 +397,8 @@ int WINAPI WinMain(
   imGuiIo.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
   window.show();
+
+  loadLastOpenedMaps();
 
   runGameLoop([&](int64 frameIndex, float timeDelta) {
     imGui.newFrame();
@@ -381,6 +414,8 @@ int WINAPI WinMain(
 
     renderer.endRender();
   });
+
+  storeLastOpenedMapsPaths();
 
   return 0;
 }

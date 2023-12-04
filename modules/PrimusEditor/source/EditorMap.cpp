@@ -8,6 +8,8 @@ bool EditorMap::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfVi
 {
   Ref<TaskEvent> mapInitializedEvent = Map::initializeAsync(mapDirectoryPath, verticalFieldOfViewRadians, aspectRatio);
 
+  wcscpy_s(path, mapDirectoryPath);
+
   const int64 lengthUntilMapName = getLengthUntilLastSlash(mapDirectoryPath) + 1;
   wcscpy_s(name, mapDirectoryPath + lengthUntilMapName);
 

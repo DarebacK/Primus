@@ -4,9 +4,9 @@
 
 #include "Internet.hpp"
 
-bool EditorMap::tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio)
+bool EditorMap::tryLoad(const wchar_t* mapDirectoryPath)
 {
-  Ref<TaskEvent> mapInitializedEvent = Map::initializeAsync(mapDirectoryPath, verticalFieldOfViewRadians, aspectRatio);
+  Ref<TaskEvent> mapInitializedEvent = Map::initializeAsync(mapDirectoryPath);
 
   wcscpy_s(path, mapDirectoryPath);
 

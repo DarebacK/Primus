@@ -18,5 +18,5 @@ struct EditorMap : public Map
   int16 heightmapTileZoom = 7;
   int16 heightmapTileSize = 512;
 
-  bool tryLoad(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio);
+  bool tryLoad(const wchar_t* mapDirectoryPath);
 };

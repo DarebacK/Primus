@@ -139,7 +139,7 @@ static void loadLastOpenedMaps()
     while(std::getline(lastOpenedMapsFile, line))
     {
       EditorMap openedMap;
-      if(!openedMap.tryLoad(line.c_str(), verticalFieldOfViewRadians, viewportSize.x / float(viewportSize.y)))
+      if(!openedMap.tryLoad(line.c_str()))
       {
         logError("Failed to load %ls map.", line.c_str());
       }
@@ -208,7 +208,7 @@ static void defineGui()
             mapFolderRelativePath += assetsFolderNameLength;
 
             EditorMap openedMap;
-            if (!openedMap.tryLoad(mapFolderRelativePath, verticalFieldOfViewRadians, viewportSize.x / float(viewportSize.y)))
+            if (!openedMap.tryLoad(mapFolderRelativePath))
             {
               logError("Failed to load %ls map.", mapFolderRelativePath);
             }

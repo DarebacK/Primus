@@ -27,12 +27,7 @@ struct Map
 
   std::vector<Ref<StaticMesh>> terrainTiles;
 
-  float cameraZoomMin = 0.f;
-  float cameraZoomMax = 0.f;
-  float cameraNearPlane = 0.f;
-  float cameraFarPlane = 0.f;
-
-  Ref<TaskEvent> initializeAsync(const wchar_t* mapDirectoryPath, float verticalFieldOfViewRadians, float aspectRatio);
+  Ref<TaskEvent> initializeAsync(const wchar_t* mapDirectoryPath);
 
   bool isPointInside(const Vec3f& pointInWorldSpace) const;
 };

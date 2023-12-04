@@ -13,7 +13,7 @@ bool Game::tryInitialize(Frame& firstFrame, D3D11Renderer& renderer)
 
   wchar_t mapDirectoryPath[256];
   swprintf_s(mapDirectoryPath, L"%ls/italy", MAPS_DIRECTORY);
-  Ref<TaskEvent> mapInitializedEvent = currentMap.initializeAsync(mapDirectoryPath, verticalFieldOfViewRadians, firstFrame.aspectRatio);
+  Ref<TaskEvent> mapInitializedEvent = currentMap.initializeAsync(mapDirectoryPath);
   if(!mapInitializedEvent.isValid())
   {
     return false;
@@ -27,10 +27,12 @@ bool Game::tryInitialize(Frame& firstFrame, D3D11Renderer& renderer)
 
   while(!mapInitializedEvent->isComplete());
 
+  firstFrame.updateCameraZoomLimits(currentMap);
   firstFrame.camera.endPosition.x = currentMap.widthInM / 2000.f;
-  firstFrame.camera.endPosition.y = currentMap.cameraZoomMax;
+  firstFrame.camera.endPosition.y = firstFrame.camera.zoomMax;
   firstFrame.camera.endPosition.z = currentMap.heightInM / 2000.f;
   firstFrame.camera.currentPosition = firstFrame.camera.endPosition;
+  firstFrame.updateCamera(currentMap, firstFrame.camera.currentPosition, firstFrame.camera.endPosition);
 
   return true;
 }
@@ -39,7 +41,7 @@ void Game::update(const Frame& lastFrame, Frame& nextFrame, D3D11Renderer& rende
 {
   TRACE_SCOPE();
 
-  nextFrame.updateCamera(currentMap, lastFrame);
+  nextFrame.updateCamera(currentMap, lastFrame.camera.currentPosition, lastFrame.camera.endPosition);
 
   {
     TRACE_SCOPE("castRayToTerrain");

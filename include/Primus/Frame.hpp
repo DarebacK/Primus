@@ -19,5 +19,6 @@ struct Frame
   int clientAreaHeight;
   float aspectRatio;
 
-  void updateCamera(const Map& currentMap, const Frame& lastFrame);
+  void updateCameraZoomLimits(const Map& currentMap);
+  void updateCamera(const Map& currentMap, const Vec3f& currentPosition, const Vec3f& endPosition);
 };

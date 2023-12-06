@@ -199,7 +199,7 @@ int WINAPI WinMain(
     game.update(*lastFrame, *nextFrame, renderer);
 
     if (lastFrame->clientAreaWidth != clientAreaWidth || lastFrame->clientAreaHeight != clientAreaHeight) {
-      renderer.onWindowResize(clientAreaWidth, clientAreaHeight);
+      renderer.onWindowResize(Vec2i(clientAreaWidth, clientAreaHeight));
     }
 
     //audio.update(*nextFrameState);

@@ -32,10 +32,11 @@ namespace
   DXGI_ADAPTER_DESC2 dxgiAdapterDesc{};
   CComPtr<IDXGISwapChain1> swapChain = nullptr;
   DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+  constexpr UINT swapchainBufferCount = 2;
   CComPtr<ID3D11RenderTargetView> backBufferRenderTargetView = nullptr;
   constexpr UINT msaaSampleCount = 1; // TODO: Is set to 1 because higher numbers cause artifacts in terrain. Resolve this.
   CComPtr<ID3D11Texture2D> mainRenderTarget = nullptr;
-  CD3D11_TEXTURE2D_DESC renderTargetDesc = {};
+  CD3D11_TEXTURE2D_DESC renderTargetDesc = {}; // TODO: get rid of this global struct, rather call getDesc when needed as the data here may be outdated.
   CComPtr<ID3D11RenderTargetView> mainRenderTargetView = nullptr;
   CComPtr<ID3D11DepthStencilView> mainDepthStencilView = nullptr;
   CComPtr<ID3D11ShaderResourceView> mainRenderTargetSrv = nullptr;
@@ -246,7 +247,7 @@ bool D3D11Renderer::tryInitialize(HWND window, bool inIsEditor)
           swapChainDesc.SampleDesc.Count = 1;
           swapChainDesc.SampleDesc.Quality = 0;
           swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-          swapChainDesc.BufferCount = 2;
+          swapChainDesc.BufferCount = swapchainBufferCount;
           swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
           swapChainDesc.Flags = 0;
           dxgiFactory->CreateSwapChainForHwnd(dxgiDevice, window, &swapChainDesc, NULL, NULL, &swapChain);
@@ -363,60 +364,83 @@ bool D3D11Renderer::tryInitialize(HWND window, bool inIsEditor)
   return true;
 }
 
-void D3D11Renderer::onWindowResize(int clientAreaWidth, int clientAreaHeight)
+Vec2i D3D11Renderer::getViewportSize() const
 {
-  if (swapChain) {
-    if(d2Context)
-    {
-      d2Context->SetTarget(nullptr);  // Clears the binding to swapChain's back buffer.
-    }
-    mainDepthStencilView.Release();
-    mainRenderTargetView.Release();
-    mainRenderTarget.Release();
-    if (FAILED(swapChain->ResizeBuffers(0, 0, 0, swapChainDesc.Format, swapChainDesc.Flags))) {
-#ifdef DAR_DEBUG
-      debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_SUMMARY);
-#endif DAR_DEBUG
-      logError("Failed to resize swapChain buffers");
-      return;
-    }
-    if (FAILED(swapChain->GetDesc1(&swapChainDesc))) {
-      logError("Failed to get swapChain desc after window resize");
-      return;
-    }
+  if(!mainRenderTarget) return {};
 
-    mainRenderTarget = createMainRenderTarget();
-    if (!mainRenderTarget) {
-      logError("Failed to create render target after window resize.");
-      return;
-    }
+  D3D11_TEXTURE2D_DESC desc;
+  mainRenderTarget->GetDesc(&desc);
+  return { desc.Width, desc.Height };
+}
+void D3D11Renderer::onWindowResize(const Vec2i& clientArea)
+{
+  if(!swapChain) return;
 
-    mainRenderTargetView = createRenderTargetView(mainRenderTarget, renderTargetDesc.Format);
-    if (!mainRenderTargetView) {
-      logError("Failed to create render target view after window resize.");
-      return;
-    }
-    mainDepthStencilView = createDepthStencilView();
-    if (!mainDepthStencilView) {
-      logError("Failed to create depth stencil view after window resize.");
-      return;
-    }
-    context->OMSetRenderTargets(1, &mainRenderTargetView.p, mainDepthStencilView);
+  // TODO: check current window size, don't do anything if it is the same.
 
-    if (!bindD2dTargetToD3dTarget()) {
-      logError("Failed to bind Direct2D render target to Direct3D render target after window resize.");
-      return;
-    }
-
-    updateViewport();
+  if(d2Context)
+  {
+    d2Context->SetTarget(nullptr);  // Clears the binding to swapChain's back buffer.
   }
+  mainDepthStencilView.Release();
+  mainRenderTargetView.Release();
+  mainRenderTarget.Release();
+  if(FAILED(swapChain->ResizeBuffers(0, 0, 0, swapChainDesc.Format, swapChainDesc.Flags))) {
+    #ifdef DAR_DEBUG
+    debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_SUMMARY);
+    #endif DAR_DEBUG
+    logError("Failed to resize swapChain buffers");
+    return;
+  }
+  if(FAILED(swapChain->GetDesc1(&swapChainDesc))) {
+    logError("Failed to get swapChain desc after window resize");
+    return;
+  }
+
+  mainRenderTarget = createMainRenderTarget();
+  if(!mainRenderTarget) {
+    logError("Failed to create render target after window resize.");
+    return;
+}
+
+  mainRenderTargetView = createRenderTargetView(mainRenderTarget, renderTargetDesc.Format);
+  if(!mainRenderTargetView) {
+    logError("Failed to create render target view after window resize.");
+    return;
+  }
+  mainDepthStencilView = createDepthStencilView();
+  if(!mainDepthStencilView) {
+    logError("Failed to create depth stencil view after window resize.");
+    return;
+  }
+  context->OMSetRenderTargets(1, &mainRenderTargetView.p, mainDepthStencilView);
+
+  if(!bindD2dTargetToD3dTarget()) {
+    logError("Failed to bind Direct2D render target to Direct3D render target after window resize.");
+    return;
+  }
+
+  updateViewport();
+}
+void D3D11Renderer::setViewportSize(const Vec2i& size)
+{
+  // TODO: change render target, but not backbuffer size.
 }
 
 void D3D11Renderer::beginRender()
 {
-  context->ClearRenderTargetView(mainRenderTargetView, clearColor);
-  context->ClearRenderTargetView(backBufferRenderTargetView, clearColor);
-  context->ClearDepthStencilView(mainDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+  if(mainRenderTargetView)
+  {
+    context->ClearRenderTargetView(mainRenderTargetView, clearColor);
+  }
+  if(backBufferRenderTargetView)
+  {
+    context->ClearRenderTargetView(backBufferRenderTargetView, clearColor);
+  }
+  if(backBufferRenderTargetView)
+  {
+    context->ClearDepthStencilView(mainDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+  }
 }
 
 void D3D11Renderer::setMainRenderTarget()

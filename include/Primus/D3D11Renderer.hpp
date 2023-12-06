@@ -13,7 +13,11 @@ public:
   ~D3D11Renderer() = default;
 
   bool tryInitialize(HWND window, bool bIsEditor);
-  void onWindowResize(int clientAreaWidth, int clientAreaHeight);
+
+  void onWindowResize(const Vec2i& clientArea);
+  Vec2i getViewportSize() const;
+  void setViewportSize(const Vec2i& size);
+
   bool tryLoadMap(const Map& map);
 
   void beginRender();

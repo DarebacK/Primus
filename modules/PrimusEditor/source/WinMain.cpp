@@ -126,8 +126,6 @@ struct DownloadPopup
 
 } downloadPopup;
 
-static Vec2i viewportSize = { 1920, 1080 }; // TODO: get the true viewport size.
-
 static std::vector<EditorMap> maps;
 static const char* const lastOpenedMapsFileName = "lastOpenedMaps.txt";
 static void loadLastOpenedMaps()
@@ -289,12 +287,12 @@ static void defineGui()
       ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
       ImGui::Begin("Viewport");
 
-      // TODO: resize renderer render target based on viewport
+      const ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+      renderer.setViewportSize(Vec2i(viewportSize.x, viewportSize.y));
 
       void* renderTargetSrv = renderer.getMainRenderTargetSrv();
       if(ensure(renderTargetSrv))
       {
-        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
         ImGui::Image(renderTargetSrv, viewportSize);
       }
 
@@ -397,6 +395,8 @@ int WINAPI WinMain(
   imGuiIo.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
   window.show();
+
+  // TODO: handle window resize
 
   loadLastOpenedMaps();
 
